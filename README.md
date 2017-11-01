@@ -22,6 +22,8 @@ We will use the Java Cryptography Architecture in our programs.
 
 ## Resources
 
+### [Q&A with Dr. Jens Weber](https://docs.google.com/document/d/1_FAZ1oX3XNIsz3g3525bRFGlEVmh1iqb7hKSQVuGh8Q/view)
+
 ### Java Cryptographic Architecture
 > The Java platform strongly emphasizes security, including language safety, cryptography, public key infrastructure, authentication, secure communication, and access control.  The JCA is a major piece of the platform, and contains a "provider" architecture and a set of APIs for digital signatures, message digests (hashes), certificates and certificate validation, encryption (symmetric/asymmetric block/stream ciphers), key generation and management, and secure random number generation, to name a few. These APIs allow developers to easily integrate security into their application code.
 
