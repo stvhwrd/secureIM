@@ -19,11 +19,17 @@ public class ChatServer implements ChatCallback {
 	ChatInterface client;
 	SecurityOptions securityOptions;
 
+	/**
+	 * @param argv
+	 */
 	public static void main(String[] argv) {
 		ChatServer chatServer = new ChatServer();
 		chatServer.startServer();
 	}
 
+	/**
+	 * 
+	 */
 	public void startServer() {
 		try {
 			if (System.getSecurityManager() == null) {
@@ -53,6 +59,14 @@ public class ChatServer implements ChatCallback {
 		}
 	}
 
+	/**
+	 * @throws RemoteException
+	 * @throws AlreadyBoundException
+	 * @throws InterruptedException
+	 * @throws UnsupportedEncodingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public void setupChat() throws RemoteException, AlreadyBoundException, InterruptedException,
 			UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		System.out.println("Enter Your name and press Enter:");
@@ -74,6 +88,14 @@ public class ChatServer implements ChatCallback {
 		System.out.println("[System] Chat Remote Object is ready.");
 	}
 
+	/**
+	 * @throws RemoteException
+	 * @throws InterruptedException
+	 * @throws UnsupportedEncodingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws NoSuchAlgorithmException
+	 */
 	public void setupSecureConnection() throws RemoteException, InterruptedException, UnsupportedEncodingException,
 			IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException {
 		// Wait for client to connect
@@ -117,6 +139,12 @@ public class ChatServer implements ChatCallback {
 		}
 	}
 
+	/**
+	 * @throws RemoteException
+	 * @throws UnsupportedEncodingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public void startChat()
 			throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		while (true) {
@@ -134,6 +162,9 @@ public class ChatServer implements ChatCallback {
 		}
 	}
 
+	/**
+	 * @throws RemoteException
+	 */
 	public void createClientPassword() throws RemoteException {
 		// TODO
 		// Normally this would be done by some account creation
@@ -144,6 +175,14 @@ public class ChatServer implements ChatCallback {
 		cryptoChat.createPassword(server.getName(), "verysecretshhh");
 	}
 
+	/**
+	 * @throws RemoteException
+	 * @throws UnsupportedEncodingException
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 * @throws InterruptedException
+	 * @throws NoSuchAlgorithmException
+	 */
 	public void checkSecurityOptions() throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
 			BadPaddingException, InterruptedException, NoSuchAlgorithmException {
 		// Make sure the security options are the same
@@ -160,6 +199,11 @@ public class ChatServer implements ChatCallback {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ChatCallback#onMessage(byte[])
+	 */
 	public void onMessage(byte[] message)
 			throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		if (securityOptions.confidentiality) {
@@ -169,6 +213,11 @@ public class ChatServer implements ChatCallback {
 		System.out.println(new String(message, "UTF-8"));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ChatCallback#onRequest(java.lang.String)
+	 */
 	public byte[] onRequest(String request) throws RemoteException, UnsupportedEncodingException,
 			IllegalBlockSizeException, BadPaddingException, InterruptedException {
 		if (DEBUG)

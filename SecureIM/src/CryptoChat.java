@@ -21,12 +21,20 @@ public class CryptoChat {
 	Cipher asymmetricEncryptionCipher;
 	Cipher asymmetricDecryptionCipher;
 
+	/**
+	 * @param input
+	 * @param keyStore
+	 * @param passStore
+	 */
 	public CryptoChat(Scanner input, String keyStore, String passStore) {
 		this.input = input;
 		this.keyStore = keyStore;
 		this.passStore = passStore;
 	}
 
+	/**
+	 * @return
+	 */
 	public SecurityOptions getSecurityOptions() {
 		if (securityOptions != null) {
 			return securityOptions;
@@ -35,6 +43,9 @@ public class CryptoChat {
 		return getSecurityOptionsFromUser();
 	}
 
+	/**
+	 * @return
+	 */
 	public SecurityOptions getSecurityOptionsFromUser() {
 		// TODO
 		// Prompt the user for the security options they want enabled using the
@@ -48,6 +59,9 @@ public class CryptoChat {
 		return securityOptions;
 	}
 
+	/**
+	 * @return
+	 */
 	public byte[] getPasswordFromUser() {
 		// TODO
 		// Prompt the user for their password using the
@@ -55,6 +69,9 @@ public class CryptoChat {
 		return "password".getBytes(); // placeholder
 	}
 
+	/**
+	 * 
+	 */
 	public void createKeyPair() {
 		// TODO
 		// Check if the files public.key and private.key exist
@@ -63,6 +80,10 @@ public class CryptoChat {
 		// Use saveFile(), eg: saveToFile("publickey", keyStore + "/" + "public.key")
 	}
 
+	/**
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 */
 	public byte[] createSecretKey() throws NoSuchAlgorithmException {
 		// Create a secret (symmetric) key:
 		// https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
@@ -75,10 +96,16 @@ public class CryptoChat {
 		return aesKeyData;
 	}
 
+	/**
+	 * @param secretKeyData
+	 */
 	public void setSecretKey(byte[] secretKeyData) {
 		saveToFile(secretKeyData, keyStore + "/" + "secret.key");
 	}
 
+	/**
+	 * @return
+	 */
 	public PublicKey getPublicKey() {
 		byte[] keyData = readFromFile(keyStore + "/" + "public.key");
 
@@ -87,6 +114,9 @@ public class CryptoChat {
 		return null; // placeholder
 	}
 
+	/**
+	 * @return
+	 */
 	public PrivateKey getPrivateKey() {
 		byte[] keyData = readFromFile(keyStore + "/" + "private.key");
 
@@ -95,6 +125,9 @@ public class CryptoChat {
 		return null; // placeholder
 	}
 
+	/**
+	 * @return
+	 */
 	public SecretKey getSecretKey() {
 		byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
 
@@ -105,6 +138,11 @@ public class CryptoChat {
 	}
 
 	// Returns true if hashedPass is a valid password for username
+	/**
+	 * @param username
+	 * @param hashedPass
+	 * @return
+	 */
 	public boolean authenticateUser(String username, byte[] hashedPass) {
 		// TODO
 		// Check if the file which would contain the user's password exists
@@ -115,6 +153,10 @@ public class CryptoChat {
 		return true; // placeholder
 	}
 
+	/**
+	 * @param password
+	 * @return
+	 */
 	public byte[] hashPassword(byte[] password) {
 		// TODO hash the password and return it
 		return "".getBytes(); // placeholder
@@ -129,12 +171,18 @@ public class CryptoChat {
 		saveToFile(hashedPassword, filename);
 	}
 
+	/**
+	 * 
+	 */
 	public void createSymmetricCiphers() {
 		// TODO: replace ??? with algorithm
 		symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
 		symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
 	}
 
+	/**
+	 * @param otherUserPublicKey
+	 */
 	public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
 		// TODO
 		// Convert otherUserPublicKey to Key (or PublicKey object)
@@ -143,11 +191,20 @@ public class CryptoChat {
 		asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
 	}
 
+	/**
+	 * 
+	 */
 	public void createAsymmetricDecryptionCipher() {
 		// TODO: replace ??? with algorithm
 		asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
 	}
 
+	/**
+	 * @param key
+	 * @param algorithm
+	 * @param cipherMode
+	 * @return
+	 */
 	public Cipher createCipher(Key key, String algorithm, int cipherMode) {
 		// TODO: Create a cipher using the given key and algorithm and return it
 		// Reference:
@@ -155,26 +212,58 @@ public class CryptoChat {
 		return null; // placeholder
 	}
 
+	/**
+	 * @param message
+	 * @return
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public byte[] encryptSymmetric(byte[] message) throws IllegalBlockSizeException, BadPaddingException {
 		return symmetricEncryptionCipher.doFinal(message);
 	}
 
+	/**
+	 * @param encrypted
+	 * @return
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public byte[] decryptSymmetric(byte[] encrypted) throws IllegalBlockSizeException, BadPaddingException {
 		return symmetricDecryptionCipher.doFinal(encrypted);
 	}
 
+	/**
+	 * @param message
+	 * @return
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public byte[] encryptPublic(byte[] message) throws IllegalBlockSizeException, BadPaddingException {
 		return asymmetricEncryptionCipher.doFinal(message);
 	}
 
+	/**
+	 * @param encrypted
+	 * @return
+	 * @throws IllegalBlockSizeException
+	 * @throws BadPaddingException
+	 */
 	public byte[] decryptPrivate(byte[] encrypted) throws IllegalBlockSizeException, BadPaddingException {
 		return asymmetricDecryptionCipher.doFinal(encrypted);
 	}
 
+	/**
+	 * @param contents
+	 * @param filename
+	 */
 	public void saveToFile(byte[] contents, String filename) {
 		// TODO
 	}
 
+	/**
+	 * @param filename
+	 * @return
+	 */
 	public byte[] readFromFile(String filename) {
 		// TODO
 		return "file contents".getBytes();
