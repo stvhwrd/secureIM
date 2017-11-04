@@ -1,15 +1,16 @@
 import java.io.UnsupportedEncodingException;
 import java.rmi.*;
 import java.rmi.registry.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
 public class ChatServer implements ChatCallback {
-	static String KEYSTORE = "server_keys";
-	static String PASS_STORE = "client_passwords";
+	static final boolean DEBUG = true;
+	static final String KEYSTORE = "server/keys";
+	static final String PASS_STORE = "server/passwords";
 	Scanner input;
 	CryptoChat cryptoChat;
 	ChatInterface server;
@@ -31,7 +32,18 @@ public class ChatServer implements ChatCallback {
             cryptoChat = new CryptoChat(input, KEYSTORE, PASS_STORE);
             
             setupChat();
-            setupConnection();
+        	setupSecureConnection();
+        	
+        	// Wait for client to finish setting up connection
+			if (client.isReady()) {
+				client.removeReadyLatch();
+			} else {
+				server.waitForReady().await();
+			}
+        	
+        	String msg = "[System] Secure connection established with " + client.getName() + ".";
+    		System.out.println(msg);
+    		
             startChat();
 
         } catch (Exception e) {
@@ -39,15 +51,19 @@ public class ChatServer implements ChatCallback {
         }
     }
     
-    public void setupChat() throws RemoteException, AlreadyBoundException {
-        securityOptions = cryptoChat.getSecurityOptionsFromUser();
+    public void setupChat() throws RemoteException, AlreadyBoundException, InterruptedException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
         System.out.println("Enter Your name and press Enter:");
         String name = input.nextLine().trim();
+        securityOptions = cryptoChat.getSecurityOptionsFromUser();
 
         server = new Chat(name);
         server.registerCallback(this);
         
-        cryptoChat.createKeyPair();
+        if (securityOptions.confidentiality || securityOptions.integrity || securityOptions.authentication) {
+			// Setup public/private keys
+			cryptoChat.createKeyPair();
+			cryptoChat.createAsymmetricDecryptionCipher();
+		}
 
         Registry registry = LocateRegistry.createRegistry(2020);
         registry.bind("Chat", server);
@@ -55,50 +71,26 @@ public class ChatServer implements ChatCallback {
         System.out.println("[System] Chat Remote Object is ready.");
     }
     
-    public void setupConnection() throws RemoteException, InterruptedException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+    public void setupSecureConnection() throws RemoteException, InterruptedException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException {
     	// Wait for client to connect
-    	server.waitForClient().await();
-    	CountDownLatch clientReady = server.waitForClient();
-        client = server.getClient();
+        server.waitForConnection().await();
         
-        System.out.println("[System] " + client.getName() + " is trying to connect.");
+        client = server.getClient();
+		System.out.println("[System] " + client.getName() + " is trying to connect.");
     	
-    	// Make sure the security options are the same
-		boolean optionsMatch;
-	    do {
-	    	// Request security options from client
-	    	clientReady.await();
-	    	String clientSecurityOptions = new String(server.getClientResponse(), "UTF-8");
-	    	optionsMatch = securityOptions.toString().equals(clientSecurityOptions);
-	    	if (!optionsMatch) {
-	    		// Let the client know options don't match
-	    		clientReady = server.waitForClient();
-	    		client.respondToClient("Options don't match".getBytes());
-	    	} else {
-	    		client.respondToClient(null);
-	    	}
-	    } while (!optionsMatch);
-	    
-	    if (securityOptions.confidentiality || securityOptions.integrity || securityOptions.authentication) {
-			// Setup public/private keys
-			clientReady = server.waitForClient();
-			cryptoChat.createKeyPair();
-			cryptoChat.createAsymmetricDecryptionCipher();
-			
-			// Send public key to client
-			server.respondToClient(cryptoChat.getPublicKey().getEncoded());
-			
+		checkSecurityOptions();
+    	
+    	if (securityOptions.confidentiality || securityOptions.integrity || securityOptions.authentication) {
 			// Get client's public key
-			clientReady.await();
-			cryptoChat.createAsymmetricEncryptionCipher(server.getClientResponse());
+			byte[] clientKeyData = client.sendRequest("getPublicKey");
+			cryptoChat.createAsymmetricEncryptionCipher(clientKeyData);
 		}
 	    
 	    if (securityOptions.confidentiality || securityOptions.integrity) {
-	    	// Wait for client to send a symmetric key encrypted with the server's public key
-	    	server.waitForClient().await();
+	    	// Get symmetric key from client
+	    	byte[] encryptedSecretKey = client.sendRequest("getSecretKey");
 	    	
 	    	// Decrypt the key
-	    	byte[] encryptedSecretKey = server.getClientResponse();
 	    	byte[] secretKeyData = cryptoChat.decryptPrivate(encryptedSecretKey);
 	    	cryptoChat.setSecretKey(secretKeyData);
 	    	cryptoChat.createSymmetricCiphers();
@@ -110,38 +102,15 @@ public class ChatServer implements ChatCallback {
 	    
 	    if (securityOptions.authentication) {
 	    	// Authenticate the client
-	    	clientReady = server.waitForClient();
 			boolean passwordsMatch;
 		    do {
-		    	clientReady.await();
-		    	byte[] clientPassword = server.getClientResponse();
+		    	byte[] clientPassword = client.sendRequest("getPassword");
 		    	passwordsMatch = cryptoChat.authenticateUser(client.getName(), clientPassword);
 		    	if (!passwordsMatch) {
-		    		clientReady = server.waitForClient();
-		    		client.respondToClient("Invalid password.".getBytes());
+		    		client.sendMessage("Invalid password.");
 		    	}
 		    } while (!passwordsMatch);
-		    
-			// Authenticate to the client
-			clientReady = server.waitForClient();
-			do {
-				byte[] password = cryptoChat.getPasswordFromUser();
-				client.respondToClient(password);
-				clientReady.await();
-				
-				byte[] response = server.getClientResponse();
-				passwordsMatch = (response == null);
-				
-				if (!passwordsMatch) {
-					clientReady = client.waitForServer();
-					System.out.println(response);
-				}
-			} while (!passwordsMatch);
 	    }
-	    
-	    String msg = "[System] Secure connection established with ";
-		client.send(msg + server.getName() + ".");
-		System.out.println(msg + client.getName() + ".");
     }
     
     public void startChat() throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
@@ -155,7 +124,7 @@ public class ChatServer implements ChatCallback {
     				msg = new String(cryptoChat.encryptSymmetric(msg.getBytes()), "UTF-8");
     			}
                 
-                client.send(msg);
+                client.sendMessage(msg);
             }
         }
     }
@@ -170,6 +139,21 @@ public class ChatServer implements ChatCallback {
     	cryptoChat.createPassword(server.getName(), "verysecretshhh");
     }
     
+    public void checkSecurityOptions() throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, NoSuchAlgorithmException {
+    	// Make sure the security options are the same
+    	String clientSecurityOptions = new String(client.sendRequest("getSecurityOptions"), "UTF-8");
+    	boolean optionsMatch = securityOptions.toString().equals(clientSecurityOptions);
+		while (!optionsMatch) {
+			// Let the client know options don't match
+    		client.sendMessage("Options don't match");
+    		
+	    	// Request new security options from client
+	    	clientSecurityOptions = new String(client.sendRequest("getSecurityOptions"), "UTF-8");
+	    	
+	    	optionsMatch = securityOptions.toString().equals(clientSecurityOptions);
+	    }
+    }
+    
     public void onMessage(byte[] message) throws UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
     	if (securityOptions.confidentiality) {
     		message = cryptoChat.decryptSymmetric(message);
@@ -177,4 +161,20 @@ public class ChatServer implements ChatCallback {
     	
     	System.out.println(new String(message, "UTF-8"));
     }
+    
+    public byte[] onRequest(String request) throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InterruptedException  {
+    	if (DEBUG) System.out.println("DEBUG  Request: " + request);
+    	
+    	switch(request) {
+    		case "getPassword":
+    			return cryptoChat.hashPassword(cryptoChat.getPasswordFromUser());
+    			
+    		case "getPublicKey":
+    			return cryptoChat.getPublicKey().getEncoded();
+    			
+    		default:
+    			System.out.println("Uknown request: " + request);
+    			return null;
+    	}
+	}
 }

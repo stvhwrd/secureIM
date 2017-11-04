@@ -1,7 +1,7 @@
 import java.io.UnsupportedEncodingException;
 import java.rmi.*;
 import java.rmi.server.*;
-import java.security.PublicKey;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CountDownLatch;
 
 import javax.crypto.BadPaddingException;
@@ -9,12 +9,12 @@ import javax.crypto.IllegalBlockSizeException;
 
 public class Chat extends UnicastRemoteObject implements ChatInterface {
 
+	private static final long serialVersionUID = 1L;
 	public String name;
 	public ChatInterface client;
-	public CountDownLatch clientLatch;
-	public CountDownLatch serverLatch;
-	public byte[] clientResponse;
-	public byte[] serverResponse;
+	public CountDownLatch connectLatch;
+	public CountDownLatch readyLatch;
+	public boolean ready;
 	public ChatCallback callback;
 
 	public Chat(String n) throws RemoteException {
@@ -27,14 +27,14 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
 
 	public void setClient(ChatInterface c) {
 		client = c;
-		serverLatch.countDown();
+		connectLatch.countDown();
 	}
 
 	public ChatInterface getClient() {
 		return client;
 	}
 
-	public void send(String s) throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
+	public void sendMessage(String s) throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
 		if (callback == null) {
 			System.out.println(s);
 		} else {
@@ -42,32 +42,28 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
 		}
 	}
 	
-	public CountDownLatch waitForClient() throws RemoteException {
-		serverLatch = new CountDownLatch(1);
-		return serverLatch;
+	public byte[] sendRequest(String request) throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException, InterruptedException, NoSuchAlgorithmException {
+		return callback.onRequest(request);
 	}
 	
-	public void respondToServer(byte[] r) throws RemoteException {
-		clientResponse = r;
-		serverLatch.countDown();
+	public CountDownLatch waitForConnection() throws RemoteException {
+		connectLatch = new CountDownLatch(1);
+		return connectLatch;
 	}
 	
-	public CountDownLatch waitForServer() throws RemoteException {
-		clientLatch = new CountDownLatch(1);
-		return clientLatch;
+	public CountDownLatch waitForReady() throws RemoteException {
+		readyLatch = new CountDownLatch(1);
+		ready = true;
+		return readyLatch;
 	}
 	
-	public void respondToClient(byte[] r) throws RemoteException {
-		serverResponse = r;
-		clientLatch.countDown();
+	public void removeReadyLatch() throws RemoteException {
+		readyLatch.countDown();
+		ready = false;
 	}
 	
-	public byte[] getClientResponse() throws RemoteException {
-		return clientResponse;
-	}
-	
-	public byte[] getServerResponse() throws RemoteException {
-		return serverResponse;
+	public boolean isReady() throws RemoteException {
+		return ready;
 	}
 	
 	public void registerCallback(ChatCallback c) throws RemoteException {

@@ -104,14 +104,14 @@ public class CryptoChat {
 		return true;	// placeholder
 	}
 	
-	public byte[] hashPassword(String password) {
+	public byte[] hashPassword(byte[] password) {
 		// TODO hash the password and return it
 		return "".getBytes();	// placeholder
 	}
 	
 	public void createPassword(String username, String plaintext) {
     	// Hash the plaintext password
-    	byte[] hashedPassword = hashPassword(plaintext);
+    	byte[] hashedPassword = hashPassword(plaintext.getBytes());
     	
     	String filename = passStore + "/" + username + ".passowrd";
     	
