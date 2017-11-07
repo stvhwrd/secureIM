@@ -84,7 +84,8 @@ public class CryptoChat {
 				default:
 					throw new IllegalArgumentException("Invalid security option: " + options);
 			}
-	    } finally {
+	    } 
+	    finally {
 	        scanner.close();
 	    }
 		System.out.println("Your selected security options were: " + securityOptions);
@@ -100,10 +101,16 @@ public class CryptoChat {
 		// TODO
 		// Prompt the user for their password using the
 		// Scanner object input (global object in this class)
-		/*System.out.println("Please enter your password:");
+		String password;
+		System.out.println("Please enter you password: ");
 		Scanner scanner = new Scanner(System.in);
-		String password = scanner.nextLine();
-		System.out.println(password);*/
+	    try {
+	    	password = scanner.nextLine();
+	    } 
+	    finally {
+	        scanner.close();
+	    }
+	    System.out.println(password);
 		return "password".getBytes(); // placeholder
 	}
 
@@ -112,7 +119,7 @@ public class CryptoChat {
 	 */
 	public void createKeyPair() {
 		// TODO
-		// Check if the files public.key and private.key exist
+		// Check if the files public.key and private.key exist	
 		// If not, create them:
 		// http://esus.com/programmatically-generating-public-private-key/
 		// Use saveFile(), eg: saveToFile("publickey", keyStore + "/" + "public.key")
