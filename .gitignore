@@ -20,6 +20,11 @@ local.properties
 # Locally stored "Eclipse launch configurations"
 *.launch
 
+# Key and password files created by the application
+server/
+client/
+public/
+
 # PyDev specific (Python IDE for Eclipse)
 *.pydevproject
 
