@@ -1,13 +1,20 @@
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
@@ -19,6 +26,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoChat {
+  static final boolean DEBUG = true;
   Scanner input;
   String keyStore; // Directory where keys are stored
   String passStore; // Directory where password hashes for the other user are stored
@@ -58,7 +66,7 @@ public class CryptoChat {
     // They can choose from Confidentiality, Integrity, and/or Authentication
 
     // Placeholder which disables all three options:
-    SecurityOptions securityOptions = new SecurityOptions(false, false, false);
+    SecurityOptions securityOptions = new SecurityOptions(false, true, false);
 
     this.securityOptions = securityOptions;
     return securityOptions;
@@ -74,11 +82,27 @@ public class CryptoChat {
 
   /** */
   public void createKeyPair() {
-    // TODO
-    // Check if the files public.key and private.key exist
-    // If not, create them:
-    // http://esus.com/programmatically-generating-public-private-key/
-    // Use saveFile(), eg: saveToFile("publickey", keyStore + "/" + "public.key")
+    String publicKeyFilepath = keyStore + "/public.key";
+    String privateKeyFilepath = keyStore + "/private.key";
+
+    // If a public/private key pair exists already, don't create a new one
+    File publicKeyFile = new File(publicKeyFilepath);
+    File privateKeyFile = new File(privateKeyFilepath);
+    if (publicKeyFile.exists() && privateKeyFile.exists()) return;
+
+    try {
+      KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+      kpg.initialize(1024);
+      KeyPair kp = kpg.genKeyPair();
+
+      byte[] publicKey = kp.getPublic().getEncoded();
+      byte[] privateKey = kp.getPrivate().getEncoded();
+
+      saveToFile(publicKey, publicKeyFilepath);
+      saveToFile(privateKey, privateKeyFilepath);
+    } catch (NoSuchAlgorithmException e) { // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -104,20 +128,54 @@ public class CryptoChat {
 
   /** @return */
   public PublicKey getPublicKey() {
-    byte[] keyData = readFromFile(keyStore + "/" + "public.key");
+    String filepath = keyStore + "/" + "public.key";
+    File f = new File(filepath);
 
-    // TODO: Convert it to a PublicKey object and return it
+    if (!f.exists()) {
+      createKeyPair();
+    }
 
-    return null; // placeholder
+    byte[] keyData = readFromFile(filepath);
+
+    PublicKey publicKey = null;
+
+    try {
+      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(keyData);
+      KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+      publicKey = keyFactory.generatePublic(pubKeySpec);
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    } catch (InvalidKeySpecException e) {
+      e.printStackTrace();
+    }
+
+    return publicKey;
   }
 
   /** @return */
   public PrivateKey getPrivateKey() {
-    byte[] keyData = readFromFile(keyStore + "/" + "private.key");
+    String filepath = keyStore + "/" + "private.key";
+    File f = new File(filepath);
 
-    // TODO: Convert it to a PrivateKey object and return it
+    if (!f.exists()) {
+      createKeyPair();
+    }
 
-    return null; // placeholder
+    byte[] keyData = readFromFile(filepath);
+
+    PrivateKey privateKey = null;
+
+    try {
+      PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(keyData);
+      KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+      privateKey = keyFactory.generatePrivate(privKeySpec);
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    } catch (InvalidKeySpecException e) {
+      e.printStackTrace();
+    }
+
+    return privateKey;
   }
 
   /** @return */
@@ -276,9 +334,19 @@ public class CryptoChat {
   /**
    * @param contents
    * @param filename
+   * @throws IOException
    */
   public void saveToFile(byte[] contents, String filename) {
-    // TODO
+    try {
+      // Create parent directories
+      (new File(filename)).getParentFile().mkdirs();
+
+      FileOutputStream fos = new FileOutputStream(filename);
+      fos.write(contents);
+      fos.close();
+    } catch (IOException e) { // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -286,7 +354,11 @@ public class CryptoChat {
    * @return
    */
   public byte[] readFromFile(String filename) {
-    // TODO
-    return "file contents".getBytes();
+    try {
+      return Files.readAllBytes(new File(filename).toPath());
+    } catch (IOException e) { // TODO Auto-generated catch block
+      e.printStackTrace();
+      return null;
+    }
   }
 }

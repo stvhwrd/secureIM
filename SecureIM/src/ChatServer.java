@@ -76,14 +76,6 @@ public class ChatServer implements ChatCallback {
     server = new Chat(name);
     server.registerCallback(this);
 
-    if (securityOptions.confidentiality
-        || securityOptions.integrity
-        || securityOptions.authentication) {
-      // Setup public/private keys
-      cryptoChat.createKeyPair();
-      cryptoChat.createAsymmetricDecryptionCipher();
-    }
-
     Registry registry = LocateRegistry.createRegistry(2020);
     registry.bind("Chat", server);
 
@@ -113,17 +105,9 @@ public class ChatServer implements ChatCallback {
 
     checkSecurityOptions();
 
-    byte[] clientKeyData = null;
-
-    if (securityOptions.confidentiality
-        || securityOptions.integrity
-        || securityOptions.authentication) {
-      // Get client's public key
-      clientKeyData = client.sendRequest("getPublicKey");
-      cryptoChat.createAsymmetricEncryptionCipher(clientKeyData);
-    }
-
     if (securityOptions.confidentiality) {
+      cryptoChat.createAsymmetricDecryptionCipher();
+
       // Get symmetric key from client
       byte[] encryptedSecretKey = client.sendRequest("getSecretKey");
 
@@ -134,6 +118,7 @@ public class ChatServer implements ChatCallback {
     }
 
     if (securityOptions.integrity) {
+      byte[] clientKeyData = client.sendRequest("getPublicKey");
       cryptoChat.createSigner();
       cryptoChat.createVerifier(clientKeyData);
     }

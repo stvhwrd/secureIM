@@ -103,14 +103,14 @@ public class ChatClient implements ChatCallback {
           SignatureException, InvalidKeyException, InvalidKeySpecException {
     byte[] serverKeyData = null;
     if (securityOptions.confidentiality
-        || securityOptions.integrity
-        || securityOptions.authentication) {
+        || securityOptions.integrity) {
       // Get server's public key
       serverKeyData = server.sendRequest("getPublicKey");
-      cryptoChat.createAsymmetricEncryptionCipher(serverKeyData);
     }
 
     if (securityOptions.confidentiality) {
+        cryptoChat.createAsymmetricEncryptionCipher(serverKeyData);
+        
       // Create a symmetric key if no key exists yet
       if (cryptoChat.getSecretKey() == null) {
         cryptoChat.createSecretKey();
