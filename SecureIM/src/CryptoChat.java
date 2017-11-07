@@ -1,7 +1,14 @@
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
@@ -12,260 +19,274 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoChat {
-	Scanner input;
-	String keyStore; // Directory where keys are stored
-	String passStore; // Directory where password hashes for the other user are stored
-	SecurityOptions securityOptions;
-	Cipher symmetricEncryptionCipher;
-	Cipher symmetricDecryptionCipher;
-	Cipher asymmetricEncryptionCipher;
-	Cipher asymmetricDecryptionCipher;
+  Scanner input;
+  String keyStore; // Directory where keys are stored
+  String passStore; // Directory where password hashes for the other user are stored
+  SecurityOptions securityOptions;
+  Cipher symmetricEncryptionCipher;
+  Cipher symmetricDecryptionCipher;
+  Cipher asymmetricEncryptionCipher;
+  Cipher asymmetricDecryptionCipher;
+  Signature signer;
+  Signature verifier;
 
-	/**
-	 * @param input
-	 * @param keyStore
-	 * @param passStore
-	 */
-	public CryptoChat(Scanner input, String keyStore, String passStore) {
-		this.input = input;
-		this.keyStore = keyStore;
-		this.passStore = passStore;
-	}
+  /**
+   * @param input
+   * @param keyStore
+   * @param passStore
+   */
+  public CryptoChat(Scanner input, String keyStore, String passStore) {
+    this.input = input;
+    this.keyStore = keyStore;
+    this.passStore = passStore;
+  }
 
-	/**
-	 * @return
-	 */
-	public SecurityOptions getSecurityOptions() {
-		if (securityOptions != null) {
-			return securityOptions;
-		}
+  /** @return */
+  public SecurityOptions getSecurityOptions() {
+    if (securityOptions != null) {
+      return securityOptions;
+    }
 
-		return getSecurityOptionsFromUser();
-	}
+    return getSecurityOptionsFromUser();
+  }
 
-	/**
-	 * @return
-	 */
-	public SecurityOptions getSecurityOptionsFromUser() {
-		// TODO
-		// Prompt the user for the security options they want enabled using the
-		// Scanner object input (global object in this class)
-		// They can choose from Confidentiality, Integrity, and/or Authentication
+  /** @return */
+  public SecurityOptions getSecurityOptionsFromUser() {
+    // TODO
+    // Prompt the user for the security options they want enabled using the
+    // Scanner object input (global object in this class)
+    // They can choose from Confidentiality, Integrity, and/or Authentication
 
-		// Placeholder which disables all three options:
-		SecurityOptions securityOptions = new SecurityOptions(false, false, false);
+    // Placeholder which disables all three options:
+    SecurityOptions securityOptions = new SecurityOptions(false, false, false);
 
-		this.securityOptions = securityOptions;
-		return securityOptions;
-	}
+    this.securityOptions = securityOptions;
+    return securityOptions;
+  }
 
-	/**
-	 * @return
-	 */
-	public byte[] getPasswordFromUser() {
-		// TODO
-		// Prompt the user for their password using the
-		// Scanner object input (global object in this class)
-		return "password".getBytes(); // placeholder
-	}
+  /** @return */
+  public byte[] getPasswordFromUser() {
+    // TODO
+    // Prompt the user for their password using the
+    // Scanner object input (global object in this class)
+    return "password".getBytes(); // placeholder
+  }
 
-	/**
-	 * 
-	 */
-	public void createKeyPair() {
-		// TODO
-		// Check if the files public.key and private.key exist
-		// If not, create them:
-		// http://esus.com/programmatically-generating-public-private-key/
-		// Use saveFile(), eg: saveToFile("publickey", keyStore + "/" + "public.key")
-	}
+  /** */
+  public void createKeyPair() {
+    // TODO
+    // Check if the files public.key and private.key exist
+    // If not, create them:
+    // http://esus.com/programmatically-generating-public-private-key/
+    // Use saveFile(), eg: saveToFile("publickey", keyStore + "/" + "public.key")
+  }
 
-	/**
-	 * @return
-	 * @throws NoSuchAlgorithmException
-	 */
-	public byte[] createSecretKey() throws NoSuchAlgorithmException {
-		// Create a secret (symmetric) key:
-		// https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
-		KeyGenerator keygen = KeyGenerator.getInstance("AES");
-		SecretKey aesKey = keygen.generateKey();
-		byte[] aesKeyData = aesKey.getEncoded();
+  /**
+   * @return
+   * @throws NoSuchAlgorithmException
+   */
+  public byte[] createSecretKey() throws NoSuchAlgorithmException {
+    // Create a secret (symmetric) key:
+    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
+    KeyGenerator keygen = KeyGenerator.getInstance("AES");
+    SecretKey aesKey = keygen.generateKey();
+    byte[] aesKeyData = aesKey.getEncoded();
 
-		saveToFile(aesKeyData, keyStore + "/" + "secret.key");
+    saveToFile(aesKeyData, keyStore + "/" + "secret.key");
 
-		return aesKeyData;
-	}
+    return aesKeyData;
+  }
 
-	/**
-	 * @param secretKeyData
-	 */
-	public void setSecretKey(byte[] secretKeyData) {
-		saveToFile(secretKeyData, keyStore + "/" + "secret.key");
-	}
+  /** @param secretKeyData */
+  public void setSecretKey(byte[] secretKeyData) {
+    saveToFile(secretKeyData, keyStore + "/" + "secret.key");
+  }
 
-	/**
-	 * @return
-	 */
-	public PublicKey getPublicKey() {
-		byte[] keyData = readFromFile(keyStore + "/" + "public.key");
+  /** @return */
+  public PublicKey getPublicKey() {
+    byte[] keyData = readFromFile(keyStore + "/" + "public.key");
 
-		// TODO: Convert it to a PublicKey object and return it
+    // TODO: Convert it to a PublicKey object and return it
 
-		return null; // placeholder
-	}
+    return null; // placeholder
+  }
 
-	/**
-	 * @return
-	 */
-	public PrivateKey getPrivateKey() {
-		byte[] keyData = readFromFile(keyStore + "/" + "private.key");
+  /** @return */
+  public PrivateKey getPrivateKey() {
+    byte[] keyData = readFromFile(keyStore + "/" + "private.key");
 
-		// TODO: Convert it to a PrivateKey object and return it
+    // TODO: Convert it to a PrivateKey object and return it
 
-		return null; // placeholder
-	}
+    return null; // placeholder
+  }
 
-	/**
-	 * @return
-	 */
-	public SecretKey getSecretKey() {
-		byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
+  /** @return */
+  public SecretKey getSecretKey() {
+    byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
 
-		// Convert it to a SecretKey object:
-		// https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SecretKeyFactory
-		SecretKeySpec secretKey = new SecretKeySpec(aesKeyData, "AES");
-		return secretKey;
-	}
+    // Convert it to a SecretKey object:
+    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SecretKeyFactory
+    SecretKeySpec secretKey = new SecretKeySpec(aesKeyData, "AES");
+    return secretKey;
+  }
 
-	// Returns true if hashedPass is a valid password for username
-	/**
-	 * @param username
-	 * @param hashedPass
-	 * @return
-	 */
-	public boolean authenticateUser(String username, byte[] hashedPass) {
-		// TODO
-		// Check if the file which would contain the user's password exists
-		// ie <passStore>/<username>.password
-		// If it exists, get the contents (use readFromFile() method in this class)
-		// and compare the hash with hashedPass
+  // Returns true if hashedPass is a valid password for username
+  /**
+   * @param username
+   * @param hashedPass
+   * @return
+   */
+  public boolean authenticateUser(String username, byte[] hashedPass) {
+    // TODO
+    // Check if the file which would contain the user's password exists
+    // ie <passStore>/<username>.password
+    // If it exists, get the contents (use readFromFile() method in this class)
+    // and compare the hash with hashedPass
 
-		return true; // placeholder
-	}
+    return true; // placeholder
+  }
 
-	/**
-	 * @param password
-	 * @return
-	 */
-	public byte[] hashPassword(byte[] password) {
-		// TODO hash the password and return it
-		return "".getBytes(); // placeholder
-	}
+  public byte[] signMessage(byte[] message)
+      throws NoSuchAlgorithmException, SignatureException, UnsupportedEncodingException {
+    signer.update(message);
+    return signer.sign();
+  }
 
-	public void createPassword(String username, String plaintext) {
-		// Hash the plaintext password
-		byte[] hashedPassword = hashPassword(plaintext.getBytes());
+  public boolean verifyMessage(byte[] message, byte[] signedMessage) throws SignatureException {
+    verifier.update(message);
+    return verifier.verify(signedMessage);
+  }
 
-		String filename = passStore + "/" + username + ".passowrd";
+  public void createSigner() throws InvalidKeyException, NoSuchAlgorithmException {
+    signer = Signature.getInstance("SHA256withDSA");
 
-		saveToFile(hashedPassword, filename);
-	}
+    /* Initializing the object with a private key */
+    PrivateKey priv = getPrivateKey();
+    signer.initSign(priv);
+  }
 
-	/**
-	 * 
-	 */
-	public void createSymmetricCiphers() {
-		// TODO: replace ??? with algorithm
-		symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
-		symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
-	}
+  public void createVerifier(byte[] publicKeyData)
+      throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException {
+    X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(publicKeyData);
 
-	/**
-	 * @param otherUserPublicKey
-	 */
-	public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
-		// TODO
-		// Convert otherUserPublicKey to Key (or PublicKey object)
-		// and replace ??? with algorithm
-		PublicKey key = null; // placeholder
-		asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
-	}
+    KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+    PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
 
-	/**
-	 * 
-	 */
-	public void createAsymmetricDecryptionCipher() {
-		// TODO: replace ??? with algorithm
-		asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
-	}
+    verifier = Signature.getInstance("SHA256withDSA");
+    verifier.initVerify(pubKey);
+  }
 
-	/**
-	 * @param key
-	 * @param algorithm
-	 * @param cipherMode
-	 * @return
-	 */
-	public Cipher createCipher(Key key, String algorithm, int cipherMode) {
-		// TODO: Create a cipher using the given key and algorithm and return it
-		// Reference:
-		// https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
-		return null; // placeholder
-	}
+  /**
+   * @param password
+   * @return
+   */
+  public byte[] hashPassword(byte[] password) {
+    // TODO hash the password and return it
+    return "".getBytes(); // placeholder
+  }
 
-	/**
-	 * @param message
-	 * @return
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 */
-	public byte[] encryptSymmetric(byte[] message) throws IllegalBlockSizeException, BadPaddingException {
-		return symmetricEncryptionCipher.doFinal(message);
-	}
+  public void createPassword(String username, String plaintext) {
+    // Hash the plaintext password
+    byte[] hashedPassword = hashPassword(plaintext.getBytes());
 
-	/**
-	 * @param encrypted
-	 * @return
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 */
-	public byte[] decryptSymmetric(byte[] encrypted) throws IllegalBlockSizeException, BadPaddingException {
-		return symmetricDecryptionCipher.doFinal(encrypted);
-	}
+    String filename = passStore + "/" + username + ".passowrd";
 
-	/**
-	 * @param message
-	 * @return
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 */
-	public byte[] encryptPublic(byte[] message) throws IllegalBlockSizeException, BadPaddingException {
-		return asymmetricEncryptionCipher.doFinal(message);
-	}
+    saveToFile(hashedPassword, filename);
+  }
 
-	/**
-	 * @param encrypted
-	 * @return
-	 * @throws IllegalBlockSizeException
-	 * @throws BadPaddingException
-	 */
-	public byte[] decryptPrivate(byte[] encrypted) throws IllegalBlockSizeException, BadPaddingException {
-		return asymmetricDecryptionCipher.doFinal(encrypted);
-	}
+  /** */
+  public void createSymmetricCiphers() {
+    // TODO: replace ??? with algorithm
+    symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
+    symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
+  }
 
-	/**
-	 * @param contents
-	 * @param filename
-	 */
-	public void saveToFile(byte[] contents, String filename) {
-		// TODO
-	}
+  /** @param otherUserPublicKey */
+  public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
+    // TODO
+    // Convert otherUserPublicKey to Key (or PublicKey object)
+    // and replace ??? with algorithm
+    PublicKey key = null; // placeholder
+    asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
+  }
 
-	/**
-	 * @param filename
-	 * @return
-	 */
-	public byte[] readFromFile(String filename) {
-		// TODO
-		return "file contents".getBytes();
-	}
+  /** */
+  public void createAsymmetricDecryptionCipher() {
+    // TODO: replace ??? with algorithm
+    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
+  }
+
+  /**
+   * @param key
+   * @param algorithm
+   * @param cipherMode
+   * @return
+   */
+  public Cipher createCipher(Key key, String algorithm, int cipherMode) {
+    // TODO: Create a cipher using the given key and algorithm and return it
+    // Reference:
+    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
+    return null; // placeholder
+  }
+
+  /**
+   * @param message
+   * @return
+   * @throws IllegalBlockSizeException
+   * @throws BadPaddingException
+   */
+  public byte[] encryptSymmetric(byte[] message)
+      throws IllegalBlockSizeException, BadPaddingException {
+    return symmetricEncryptionCipher.doFinal(message);
+  }
+
+  /**
+   * @param encrypted
+   * @return
+   * @throws IllegalBlockSizeException
+   * @throws BadPaddingException
+   */
+  public byte[] decryptSymmetric(byte[] encrypted)
+      throws IllegalBlockSizeException, BadPaddingException {
+    return symmetricDecryptionCipher.doFinal(encrypted);
+  }
+
+  /**
+   * @param message
+   * @return
+   * @throws IllegalBlockSizeException
+   * @throws BadPaddingException
+   */
+  public byte[] encryptPublic(byte[] message)
+      throws IllegalBlockSizeException, BadPaddingException {
+    return asymmetricEncryptionCipher.doFinal(message);
+  }
+
+  /**
+   * @param encrypted
+   * @return
+   * @throws IllegalBlockSizeException
+   * @throws BadPaddingException
+   */
+  public byte[] decryptPrivate(byte[] encrypted)
+      throws IllegalBlockSizeException, BadPaddingException {
+    return asymmetricDecryptionCipher.doFinal(encrypted);
+  }
+
+  /**
+   * @param contents
+   * @param filename
+   */
+  public void saveToFile(byte[] contents, String filename) {
+    // TODO
+  }
+
+  /**
+   * @param filename
+   * @return
+   */
+  public byte[] readFromFile(String filename) {
+    // TODO
+    return "file contents".getBytes();
+  }
 }
