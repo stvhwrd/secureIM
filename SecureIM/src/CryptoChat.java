@@ -54,7 +54,41 @@ public class CryptoChat {
 
 		// Placeholder which disables all three options:
 		SecurityOptions securityOptions = new SecurityOptions(false, false, false);
-
+		
+		System.out.println("Choose your security options where 1 is Confidentiality, 2 is Integrity, and 3 is Authentication: ");
+		Scanner scanner = new Scanner(System.in);
+	    try {
+	    	String options = scanner.nextLine();
+			switch( options ) {
+				case "1":
+					securityOptions = new SecurityOptions(true, false, false);
+					break;
+				case "2":
+					securityOptions = new SecurityOptions(false, true, false);
+					break;
+				case "3":
+					securityOptions = new SecurityOptions(false, false, true);
+					break;
+				case "12":
+					securityOptions = new SecurityOptions(true, true, false);
+					break;
+				case "13":
+					securityOptions = new SecurityOptions(true, false, true);
+					break;
+				case "23":
+					securityOptions = new SecurityOptions(false, true, true);
+					break;
+				case "123":
+					securityOptions = new SecurityOptions(true, true, true);
+					break;
+				default:
+					throw new IllegalArgumentException("Invalid security option: " + options);
+			}
+	    } finally {
+	        scanner.close();
+	    }
+		System.out.println("Your selected security options were: " + securityOptions);
+		
 		this.securityOptions = securityOptions;
 		return securityOptions;
 	}
@@ -66,6 +100,10 @@ public class CryptoChat {
 		// TODO
 		// Prompt the user for their password using the
 		// Scanner object input (global object in this class)
+		/*System.out.println("Please enter your password:");
+		Scanner scanner = new Scanner(System.in);
+		String password = scanner.nextLine();
+		System.out.println(password);*/
 		return "password".getBytes(); // placeholder
 	}
 
