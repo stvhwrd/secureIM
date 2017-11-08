@@ -24,6 +24,12 @@ public class ChatServer implements ChatCallback {
 
   /** @param argv */
   public static void main(String[] argv) {
+
+    // Set JVM arguments
+    final String dir = System.getProperty("user.dir");
+    System.setProperty("java.security.policy", dir + "/security.policy");
+    System.setProperty("java.rmi.server.codebase", dir + "/bin");
+
     ChatServer chatServer = new ChatServer();
     chatServer.startServer();
   }
@@ -69,7 +75,7 @@ public class ChatServer implements ChatCallback {
   public void setupChat()
       throws RemoteException, AlreadyBoundException, InterruptedException,
           UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    System.out.println("Enter Your name and press Enter:");
+    System.out.println("Please enter your username:");
     String name = input.nextLine().trim();
     securityOptions = cryptoChat.getSecurityOptions();
 
@@ -178,10 +184,7 @@ public class ChatServer implements ChatCallback {
 
   /** @throws RemoteException */
   public void createClientPassword() throws RemoteException {
-    // TODO
-    // Normally this would be done by some account creation
-    // For the purposes of this assignment we will hardcode the password
-    // First check if the password file exists already
+    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
 
     // Otherwise create a password
     cryptoChat.createPassword(server.getName(), "verysecretshhh");

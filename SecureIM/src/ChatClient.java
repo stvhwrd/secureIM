@@ -24,6 +24,12 @@ public class ChatClient implements ChatCallback {
   SecurityOptions securityOptions;
 
   public static void main(String[] argv) {
+
+    // Set JVM arguments
+    final String dir = System.getProperty("user.dir");
+    System.setProperty("java.security.policy", dir + "/security.policy");
+    System.setProperty("java.rmi.server.codebase", dir + "/bin");
+
     ChatClient chatClient = new ChatClient();
     chatClient.startClient();
   }
@@ -102,15 +108,14 @@ public class ChatClient implements ChatCallback {
           IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
           SignatureException, InvalidKeyException, InvalidKeySpecException {
     byte[] serverKeyData = null;
-    if (securityOptions.confidentiality
-        || securityOptions.integrity) {
+    if (securityOptions.confidentiality || securityOptions.integrity) {
       // Get server's public key
       serverKeyData = server.sendRequest("getPublicKey");
     }
 
     if (securityOptions.confidentiality) {
-        cryptoChat.createAsymmetricEncryptionCipher(serverKeyData);
-        
+      cryptoChat.createAsymmetricEncryptionCipher(serverKeyData);
+
       // Create a symmetric key if no key exists yet
       if (cryptoChat.getSecretKey() == null) {
         cryptoChat.createSecretKey();
@@ -168,10 +173,7 @@ public class ChatClient implements ChatCallback {
 
   /** @throws RemoteException */
   public void createServerPassword() throws RemoteException {
-    // TODO
-    // Normally this would be done by some account creation
-    // For the purposes of this assignment we will hardcode the password
-    // First check if the password file exists already
+    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
 
     // Otherwise create a password
     cryptoChat.createPassword(server.getName(), "suchsecuremuchwow");
