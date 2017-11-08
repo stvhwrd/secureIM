@@ -54,14 +54,14 @@ public class ChatClient implements ChatCallback {
         client.waitForReady().await();
       }
 
-      String msg = "[System] Secure connection established with " + server.getName() + ".";
+      String msg = "\n[System] Secure connection established with " + server.getName() + ".";
       System.out.println(msg);
 
       startChat();
 
     } catch (Exception e) {
-      System.out.println("[System] Client failed: " + e);
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
+      System.out.println("\n[System] Client failed: " + e);
+      cryptoChat.displayExceptionInfo(e);
     }
   }
 

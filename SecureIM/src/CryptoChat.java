@@ -3,7 +3,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -151,8 +150,7 @@ public class CryptoChat {
           saveToFile(privateKey, privateKeyFilepath);
         }
       } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-        System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
-        e.printStackTrace();
+        displayExceptionInfo(e);
       }
     }
   }
@@ -204,8 +202,7 @@ public class CryptoChat {
       publicKey = keyFactory.generatePublic(pubKeySpec);
 
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
-      e.printStackTrace();
+      displayExceptionInfo(e);
     }
 
     return publicKey;
@@ -233,8 +230,7 @@ public class CryptoChat {
       KeyFactory keyFactory = KeyFactory.getInstance("DSA");
       privateKey = keyFactory.generatePrivate(privKeySpec);
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
-      e.printStackTrace();
+      displayExceptionInfo(e);
     }
 
     return privateKey;
@@ -341,8 +337,7 @@ public class CryptoChat {
       if (DEBUG) System.out.println("DEBUG  Hash:" + hash);
       return hash;
     } catch (NoSuchAlgorithmException e) {
-      System.out.println("Unable to hash password");
-      System.out.println(e);
+      displayExceptionInfo(e);
       return "".getBytes(); // @todo: guarantee a sensible return value
     }
   }
@@ -452,8 +447,7 @@ public class CryptoChat {
       fos.write(contents);
       fos.close();
     } catch (IOException e) {
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
-      e.printStackTrace();
+      displayExceptionInfo(e);
     }
   }
 
@@ -466,12 +460,20 @@ public class CryptoChat {
   public byte[] readFromFile(String filename) {
     try {
       return Files.readAllBytes(new File(filename).toPath());
-    } catch (NoSuchFileException e) {
-      return null;
     } catch (IOException e) {
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
-      e.printStackTrace();
+      displayExceptionInfo(e);
+
       return null;
     }
+  }
+
+  /**
+   * Displays information about an Exception
+   *
+   * @param e the exception thrown
+   */
+  public void displayExceptionInfo(Exception e) {
+    System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
+    e.printStackTrace();
   }
 }

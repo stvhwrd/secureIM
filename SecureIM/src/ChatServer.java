@@ -54,14 +54,14 @@ public class ChatServer implements ChatCallback {
         server.waitForReady().await();
       }
 
-      String msg = "[System] Secure connection established with " + client.getName() + ".";
+      String msg = "\n[System] Secure connection established with " + client.getName() + ".";
       System.out.println(msg);
 
       startChat();
 
     } catch (Exception e) {
-      System.out.println("[System] Server failed: " + e);
-      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
+      System.out.println("\n[System] Server failed: " + e);
+      cryptoChat.displayExceptionInfo(e);
     }
   }
 
@@ -83,8 +83,7 @@ public class ChatServer implements ChatCallback {
             + "/ __|/ _ \\/ __| | | | '__/ _ \\| || |\\/| |\n"
             + "\\__ \\  __/ (__| |_| | | |  __/| || |  | |\n"
             + "|___/\\___|\\___|\\__,_|_|  \\___|___|_|  |_|\n"
-            + "                                         "
-            + "");
+            + "                                         \n");
     System.out.println("Please enter your server username:");
     String name = input.nextLine().trim();
     securityOptions = cryptoChat.getSecurityOptions();
