@@ -52,17 +52,10 @@ public class CryptoChat {
     this.passStore = passStore;
   }
 
-  /** @return */
   public SecurityOptions getSecurityOptions() {
-    if (securityOptions != null) {
-      return securityOptions;
-    } else {
-      return getSecurityOptionsFromUser();
-    }
+    return securityOptions == null ? getSecurityOptionsFromUser() : securityOptions;
   }
 
-  /** @return */
-  /** @return */
   public SecurityOptions getSecurityOptionsFromUser() {
     // Default to no security
     SecurityOptions securityOptions = new SecurityOptions(false, false, false);
@@ -117,7 +110,11 @@ public class CryptoChat {
     return securityOptions;
   }
 
-  /** @return */
+  /**
+   * Prompt user for password input
+   *
+   * @return byte[] password
+   */
   public byte[] getPasswordFromUser() {
     String password;
     System.out.println("\nPlease enter your password: ");
@@ -161,7 +158,7 @@ public class CryptoChat {
   }
 
   /**
-   * @return
+   * @return byte[] AES key content
    * @throws NoSuchAlgorithmException
    */
   public byte[] createSecretKey() throws NoSuchAlgorithmException {
@@ -176,12 +173,20 @@ public class CryptoChat {
     return aesKeyData;
   }
 
-  /** @param secretKeyData */
+  /**
+   * Saves secret key as file on disk
+   *
+   * @param secretKeyData
+   */
   public void setSecretKey(byte[] secretKeyData) {
     saveToFile(secretKeyData, keyStore + "/" + "secret.key");
   }
 
-  /** @return */
+  /**
+   * Retrieves public key (if it exists) or creates new public key
+   *
+   * @return PublicKey
+   */
   public PublicKey getPublicKey() {
     String filepath = keyStore + "/" + "public.key";
     File f = new File(filepath);
@@ -197,6 +202,7 @@ public class CryptoChat {
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(keyData);
       KeyFactory keyFactory = KeyFactory.getInstance("DSA");
       publicKey = keyFactory.generatePublic(pubKeySpec);
+
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
       e.printStackTrace();
@@ -205,7 +211,11 @@ public class CryptoChat {
     return publicKey;
   }
 
-  /** @return */
+  /**
+   * Retrieves private key (if it exists) or creates new private key
+   *
+   * @return PrivateKey
+   */
   public PrivateKey getPrivateKey() {
     String filepath = keyStore + "/" + "private.key";
     File f = new File(filepath);
@@ -233,7 +243,7 @@ public class CryptoChat {
   /**
    * Read secret key from file.
    *
-   * @return secretKey
+   * @return SecretKey
    */
   public SecretKey getSecretKey() {
     byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
@@ -249,7 +259,7 @@ public class CryptoChat {
    *
    * @param username
    * @param hashedPassword
-   * @return
+   * @return true if hashes match
    */
   public boolean authenticateUser(String username, byte[] hashedPassword) {
     String filename = passStore + "/" + username + ".password";
@@ -266,17 +276,34 @@ public class CryptoChat {
     }
   }
 
+  /**
+   * @param message
+   * @return
+   * @throws NoSuchAlgorithmException
+   * @throws SignatureException
+   * @throws UnsupportedEncodingException
+   */
   public byte[] signMessage(byte[] message)
       throws NoSuchAlgorithmException, SignatureException, UnsupportedEncodingException {
     signer.update(message);
     return signer.sign();
   }
 
+  /**
+   * @param message
+   * @param signedMessage
+   * @return
+   * @throws SignatureException
+   */
   public boolean verifyMessage(byte[] message, byte[] signedMessage) throws SignatureException {
     verifier.update(message);
     return verifier.verify(signedMessage);
   }
 
+  /**
+   * @throws InvalidKeyException
+   * @throws NoSuchAlgorithmException
+   */
   public void createSigner() throws InvalidKeyException, NoSuchAlgorithmException {
     signer = Signature.getInstance("SHA256withDSA");
 
@@ -285,6 +312,12 @@ public class CryptoChat {
     signer.initSign(priv);
   }
 
+  /**
+   * @param publicKeyData
+   * @throws InvalidKeyException
+   * @throws NoSuchAlgorithmException
+   * @throws InvalidKeySpecException
+   */
   public void createVerifier(byte[] publicKeyData)
       throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException {
     X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(publicKeyData);
@@ -297,8 +330,10 @@ public class CryptoChat {
   }
 
   /**
+   * Generate cryptographic hash with SHA-256
+   *
    * @param password
-   * @return hash
+   * @return
    */
   public byte[] hashPassword(byte[] password) {
     try {
@@ -313,7 +348,7 @@ public class CryptoChat {
   }
 
   /**
-   * Hash the plaintext password
+   * Save a hashed password to file from plaintext input
    *
    * @param username
    * @param plaintext
@@ -325,34 +360,35 @@ public class CryptoChat {
     saveToFile(hashedPassword, filename);
   }
 
-  /** */
+  /** @todo: replace ??? with algorithm */
   public void createSymmetricCiphers() {
-    // @todo: replace ??? with algorithm
     symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
     symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
   }
 
-  /** @param otherUserPublicKey */
+  /**
+   * @todo: Convert otherUserPublicKey to Key (or PublicKey object) and replace ??? with algorithm
+   * @param otherUserPublicKey
+   */
   public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
-    // @todo: Convert otherUserPublicKey to Key (or PublicKey object) and replace ??? with algorithm
     PublicKey key = null; // placeholder
     asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
   }
 
-  /** */
+  /** @todo: replace ??? with algorithm */
   public void createAsymmetricDecryptionCipher() {
-    // @todo: replace ??? with algorithm
     asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
   }
 
   /**
+   * @todo: Create a cipher using the given key and algorithm and return it. Reference:
+   *     https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
    * @param key
    * @param algorithm
    * @param cipherMode
    * @return
    */
   public Cipher createCipher(Key key, String algorithm, int cipherMode) {
-    // @todo: Create a cipher using the given key and algorithm and return it. Reference: https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
     return null; // placeholder
   }
 
@@ -401,6 +437,8 @@ public class CryptoChat {
   }
 
   /**
+   * Save a byte array to file on disk
+   *
    * @param contents
    * @param filename
    * @throws IOException
@@ -420,8 +458,10 @@ public class CryptoChat {
   }
 
   /**
+   * Retrieve a file from disk
+   *
    * @param filename
-   * @return
+   * @return byte[] content of file
    */
   public byte[] readFromFile(String filename) {
     try {
