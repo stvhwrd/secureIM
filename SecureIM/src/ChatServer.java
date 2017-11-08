@@ -13,7 +13,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
 public class ChatServer implements ChatCallback {
-  static final boolean DEBUG = true;
+  static final boolean DEBUG = false;
   static final String KEYSTORE = "server/keys";
   static final String PASS_STORE = "server/passwords";
   Scanner input;
@@ -95,7 +95,7 @@ public class ChatServer implements ChatCallback {
     Registry registry = LocateRegistry.createRegistry(2020);
     registry.bind("Chat", server);
 
-    System.out.println("[System] Chat Remote Object is ready.");
+    System.out.println("\n[System] Chat Remote Object is ready.");
   }
 
   /**
@@ -117,7 +117,7 @@ public class ChatServer implements ChatCallback {
     server.waitForConnection().await();
 
     client = server.getClient();
-    System.out.println("[System] " + client.getName() + " is trying to connect.");
+    System.out.println("\n[System] " + client.getName() + " is trying to connect.");
 
     checkSecurityOptions();
 
@@ -146,14 +146,11 @@ public class ChatServer implements ChatCallback {
         byte[] clientPassword = client.sendRequest("getPassword");
         passwordsMatch = cryptoChat.authenticateUser(client.getName(), clientPassword);
         if (!passwordsMatch) {
-          client.sendMessage("Invalid password.");
+          client.sendMessage("\nIncorrect password.");
         }
       } while (!passwordsMatch);
 
-      // Redundant doublecheck that password matches
-      if (passwordsMatch) {
-        System.out.println("Client has authenticated as \"" + client.getName() + "\"");
-      }
+      System.out.println("\nClient has authenticated as \"" + client.getName() + "\"");
     }
   }
 
@@ -187,7 +184,7 @@ public class ChatServer implements ChatCallback {
         }
       } else {
         // Client disconnected
-        System.out.println("[System] " + client.getName() + " has disconnected.");
+        System.out.println("\n[System] " + client.getName() + " has disconnected.");
         client = null;
         break;
       }
@@ -196,14 +193,6 @@ public class ChatServer implements ChatCallback {
     // Wait for new client to connect
     startServer();
   }
-
-  //  /** @throws RemoteException */
-  //  public void createClientPassword() throws RemoteException {
-  //    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
-  //
-  //    // Otherwise create a password
-  //    cryptoChat.createPassword(server.getName(), "verysecretshhh");
-  //  }
 
   /**
    * @throws RemoteException

@@ -29,7 +29,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class CryptoChat {
-  static final boolean DEBUG = true;
+  static final boolean DEBUG = false;
   Scanner input;
   String keyStore; // Directory where keys are stored
   String passStore; // Directory where password hashes for the other user are stored
@@ -120,7 +120,7 @@ public class CryptoChat {
   /** @return */
   public byte[] getPasswordFromUser() {
     String password;
-    System.out.println("Please enter your password: ");
+    System.out.println("\nPlease enter your password: ");
     password = input.nextLine();
     if (DEBUG) System.out.println("DEBUG  Password:" + password);
 
@@ -253,16 +253,15 @@ public class CryptoChat {
    */
   public boolean authenticateUser(String username, byte[] hashedPassword) {
     String filename = passStore + "/" + username + ".password";
-
     File hashOnDisk = new File(filename);
 
     if (hashOnDisk.exists()) {
       byte[] storedHash = readFromFile(filename);
       return Arrays.equals(storedHash, hashedPassword);
-    } else {
-      // New user
-      System.out.println("Looks like you're new here. Welcome!  Don't forget your password :)");
+
+    } else { // New user
       saveToFile(hashedPassword, filename);
+      System.out.println("The other user is NEW - use caution.");
       return true;
     }
   }

@@ -14,7 +14,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 
 public class ChatClient implements ChatCallback {
-  static final boolean DEBUG = true;
+  static final boolean DEBUG = false;
   static final String KEYSTORE = "client/keys";
   static final String PASS_STORE = "client/passwords";
   Scanner input;
@@ -99,7 +99,7 @@ public class ChatClient implements ChatCallback {
     client.registerCallback(this);
     server.setClient(client);
 
-    System.out.println("[System] Chat Remote Object is ready.");
+    System.out.println("\n[System] Chat Remote Object is ready.");
   }
 
   /**
@@ -145,14 +145,11 @@ public class ChatClient implements ChatCallback {
         byte[] serverPassword = server.sendRequest("getPassword");
         passwordsMatch = cryptoChat.authenticateUser(server.getName(), serverPassword);
         if (!passwordsMatch) {
-          server.sendMessage("Invalid password.");
+          server.sendMessage("\nIncorrect password.");
         }
       } while (!passwordsMatch);
 
-      // Redundant doublecheck that password matches
-      if (passwordsMatch) {
-        System.out.println("Server has authenticated as \"" + server.getName() + "\"");
-      }
+      System.out.println("\nServer has authenticated as \"" + server.getName() + "\"");
     }
   }
 
@@ -185,14 +182,6 @@ public class ChatClient implements ChatCallback {
       }
     }
   }
-
-  //  /** @throws RemoteException */
-  //  public void createServerPassword() throws RemoteException {
-  //    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
-  //
-  //    // Otherwise create a password
-  //    cryptoChat.createPassword(server.getName(), "suchsecuremuchwow");
-  //  }
 
   /*
    * (non-Javadoc)
