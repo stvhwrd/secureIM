@@ -26,7 +26,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     this.name = n;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#getName()
@@ -35,7 +35,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return this.name;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#setClient(ChatInterface)
@@ -45,7 +45,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     connectLatch.countDown();
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#getClient()
@@ -54,7 +54,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return client;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#sendMessage(java.lang.String)
@@ -69,6 +69,11 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     }
   }
 
+  /**
+   * (non-Javadoc)
+   *
+   * @see ChatInterface#sendMessage(byte[])
+   */
   public void sendMessage(byte[] s)
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException {
@@ -79,6 +84,11 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     }
   }
 
+  /**
+   * (non-Javadoc)
+   *
+   * @see ChatInterface#sendMessage(java.lang.String, byte[])
+   */
   public void sendMessage(String s, byte[] signedS)
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException {
@@ -89,6 +99,11 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     }
   }
 
+  /**
+   * (non-Javadoc)
+   *
+   * @see ChatInterface#sendMessage(byte[], byte[])
+   */
   public void sendMessage(byte[] s, byte[] signedS)
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException {
@@ -99,7 +114,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     }
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#sendRequest(java.lang.String)
@@ -110,7 +125,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return callback.onRequest(request);
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#waitForConnection()
@@ -120,7 +135,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return connectLatch;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#waitForReady()
@@ -131,7 +146,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return readyLatch;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#removeReadyLatch()
@@ -141,7 +156,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     ready = false;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#isReady()
@@ -150,7 +165,7 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     return ready;
   }
 
-  /*
+  /**
    * (non-Javadoc)
    *
    * @see ChatInterface#registerCallback(ChatCallback)

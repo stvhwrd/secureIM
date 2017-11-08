@@ -26,9 +26,9 @@ public class ChatServer implements ChatCallback {
   public static void main(String[] argv) {
 
     // Set JVM arguments
-    final String dir = System.getProperty("user.dir");
-    System.setProperty("java.security.policy", dir + "/security.policy");
-    System.setProperty("java.rmi.server.codebase", dir + "/bin");
+    //    final String dir = System.getProperty("user.dir");
+    //    System.setProperty("java.security.policy", "file:" + dir + "/security.policy");
+    //    System.setProperty("java.rmi.server.codebase", dir + "/bin");
 
     ChatServer chatServer = new ChatServer();
     chatServer.startServer();
@@ -61,6 +61,7 @@ public class ChatServer implements ChatCallback {
 
     } catch (Exception e) {
       System.out.println("[System] Server failed: " + e);
+      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
     }
   }
 
@@ -75,7 +76,16 @@ public class ChatServer implements ChatCallback {
   public void setupChat()
       throws RemoteException, AlreadyBoundException, InterruptedException,
           UnsupportedEncodingException, IllegalBlockSizeException, BadPaddingException {
-    System.out.println("Please enter your username:");
+    System.out.println(
+        "Welcome to\n"
+            + "                              ___ __  __ \n"
+            + " ___  ___  ___ _   _ _ __ ___|_ _|  \\/  |\n"
+            + "/ __|/ _ \\/ __| | | | '__/ _ \\| || |\\/| |\n"
+            + "\\__ \\  __/ (__| |_| | | |  __/| || |  | |\n"
+            + "|___/\\___|\\___|\\__,_|_|  \\___|___|_|  |_|\n"
+            + "                                         "
+            + "");
+    System.out.println("Please enter your server username:");
     String name = input.nextLine().trim();
     securityOptions = cryptoChat.getSecurityOptions();
 
@@ -139,6 +149,11 @@ public class ChatServer implements ChatCallback {
           client.sendMessage("Invalid password.");
         }
       } while (!passwordsMatch);
+
+      // Redundant doublecheck that password matches
+      if (passwordsMatch) {
+        System.out.println("Client has authenticated as \"" + client.getName() + "\"");
+      }
     }
   }
 
@@ -182,13 +197,13 @@ public class ChatServer implements ChatCallback {
     startServer();
   }
 
-  /** @throws RemoteException */
-  public void createClientPassword() throws RemoteException {
-    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
-
-    // Otherwise create a password
-    cryptoChat.createPassword(server.getName(), "verysecretshhh");
-  }
+  //  /** @throws RemoteException */
+  //  public void createClientPassword() throws RemoteException {
+  //    // @todo Normally this would be done by some account creation, but for the purposes of this assignment we will hardcode the password.  First check if the password file exists already
+  //
+  //    // Otherwise create a password
+  //    cryptoChat.createPassword(server.getName(), "verysecretshhh");
+  //  }
 
   /**
    * @throws RemoteException

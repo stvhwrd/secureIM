@@ -3,11 +3,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -16,6 +18,7 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
@@ -53,70 +56,75 @@ public class CryptoChat {
   public SecurityOptions getSecurityOptions() {
     if (securityOptions != null) {
       return securityOptions;
+    } else {
+      return getSecurityOptionsFromUser();
     }
-
-    return getSecurityOptionsFromUser();
   }
 
   /** @return */
   /** @return */
   public SecurityOptions getSecurityOptionsFromUser() {
-    // TODO
-    // Prompt the user for the security options they want enabled using the
-    // Scanner object input (global object in this class)
-    // They can choose from Confidentiality, Integrity, and/or Authentication
-
-    // Placeholder which disables all three options:
+    // Default to no security
     SecurityOptions securityOptions = new SecurityOptions(false, false, false);
+    boolean validOptions = false;
+    do {
+      // Prompt user
+      System.out.println("\nSecurity options:\n----");
+      System.out.println(
+          "Choose 'C' for Confidentiality, \n       'I' for Integrity, and \n       'A' for Authentication.");
+      System.out.println("\nFor example: 'CI' will enable Confidentiality and Integrity.");
+      System.out.println("\nPlease select your security options now:");
 
-    System.out.println(
-        "Choose your security options where 1 is Confidentiality, 2 is Integrity, and 3 is Authentication: ");
-    String options = input.nextLine();
-    switch (options) {
-      case "1":
-        securityOptions = new SecurityOptions(true, false, false);
-        break;
-      case "2":
-        securityOptions = new SecurityOptions(false, true, false);
-        break;
-      case "3":
-        securityOptions = new SecurityOptions(false, false, true);
-        break;
-      case "12":
-        securityOptions = new SecurityOptions(true, true, false);
-        break;
-      case "13":
-        securityOptions = new SecurityOptions(true, false, true);
-        break;
-      case "23":
-        securityOptions = new SecurityOptions(false, true, true);
-        break;
-      case "123":
-        securityOptions = new SecurityOptions(true, true, true);
-        break;
-      case "":
-        securityOptions = new SecurityOptions(false, false, false);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid security option: " + options);
-    }
-    System.out.println("Your selected security options were: " + securityOptions);
+      // Parse input
+      String options = input.nextLine().toUpperCase();
 
+      if (options.length() == 0) {
+        System.out.println("No security options chosen.");
+        validOptions = true;
+
+      } else if (options.length() > 3) {
+        System.out.println("Maximum of 3 security options allowed. You chose " + options.length());
+        validOptions = false;
+
+      } else { // 1-3 options chosen
+        String response = new String("");
+        response += "\nYour chat session will be secured by:";
+
+        if (options.indexOf("C") != -1) {
+          securityOptions.confidentiality = true;
+          validOptions = true;
+          response += "\n - Confidentiality";
+        }
+
+        if (options.indexOf("I") != -1) {
+          securityOptions.integrity = true;
+          validOptions = true;
+          response += "\n - Integrity";
+        }
+
+        if (options.indexOf("A") != -1) {
+          securityOptions.authentication = true;
+          validOptions = true;
+          response += "\n - Authentication";
+        }
+        if (validOptions) {
+          System.out.println(response);
+        }
+      }
+    } while (!validOptions);
     this.securityOptions = securityOptions;
+
     return securityOptions;
   }
 
   /** @return */
   public byte[] getPasswordFromUser() {
-    // TODO
-    // Prompt the user for their password using the
-    // Scanner object input (global object in this class)
     String password;
-    System.out.println("Please enter you password: ");
+    System.out.println("Please enter your password: ");
     password = input.nextLine();
+    if (DEBUG) System.out.println("DEBUG  Password:" + password);
 
-    System.out.println(password);
-    return "password".getBytes(); // placeholder
+    return password.getBytes();
   }
 
   /** */
@@ -127,20 +135,28 @@ public class CryptoChat {
     // If a public/private key pair exists already, don't create a new one
     File publicKeyFile = new File(publicKeyFilepath);
     File privateKeyFile = new File(privateKeyFilepath);
-    if (publicKeyFile.exists() && privateKeyFile.exists()) return;
+    if (publicKeyFile.exists() && privateKeyFile.exists()) {
+      return;
+    } else {
+      try {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
+        KeyPair kp = kpg.genKeyPair();
 
-    try {
-      KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-      kpg.initialize(1024);
-      KeyPair kp = kpg.genKeyPair();
+        byte[] publicKey = kp.getPublic().getEncoded();
+        byte[] privateKey = kp.getPrivate().getEncoded();
 
-      byte[] publicKey = kp.getPublic().getEncoded();
-      byte[] privateKey = kp.getPrivate().getEncoded();
-
-      saveToFile(publicKey, publicKeyFilepath);
-      saveToFile(privateKey, privateKeyFilepath);
-    } catch (NoSuchAlgorithmException e) { // TODO Auto-generated catch block
-      e.printStackTrace();
+        // Only store valid (non-null) keys
+        if (publicKey == null || privateKey == null) {
+          throw new UnsupportedEncodingException();
+        } else {
+          saveToFile(publicKey, publicKeyFilepath);
+          saveToFile(privateKey, privateKeyFilepath);
+        }
+      } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+        System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
+        e.printStackTrace();
+      }
     }
   }
 
@@ -175,16 +191,14 @@ public class CryptoChat {
     }
 
     byte[] keyData = readFromFile(filepath);
-
     PublicKey publicKey = null;
 
     try {
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(keyData);
       KeyFactory keyFactory = KeyFactory.getInstance("DSA");
       publicKey = keyFactory.generatePublic(pubKeySpec);
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    } catch (InvalidKeySpecException e) {
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
       e.printStackTrace();
     }
 
@@ -208,16 +222,19 @@ public class CryptoChat {
       PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(keyData);
       KeyFactory keyFactory = KeyFactory.getInstance("DSA");
       privateKey = keyFactory.generatePrivate(privKeySpec);
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    } catch (InvalidKeySpecException e) {
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
       e.printStackTrace();
     }
 
     return privateKey;
   }
 
-  /** @return */
+  /**
+   * Read secret key from file.
+   *
+   * @return secretKey
+   */
   public SecretKey getSecretKey() {
     byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
 
@@ -227,20 +244,27 @@ public class CryptoChat {
     return secretKey;
   }
 
-  // Returns true if hashedPass is a valid password for username
   /**
+   * Returns true if hashedPass is a valid password for username
+   *
    * @param username
-   * @param hashedPass
+   * @param hashedPassword
    * @return
    */
-  public boolean authenticateUser(String username, byte[] hashedPass) {
-    // TODO
-    // Check if the file which would contain the user's password exists
-    // ie <passStore>/<username>.password
-    // If it exists, get the contents (use readFromFile() method in this class)
-    // and compare the hash with hashedPass
+  public boolean authenticateUser(String username, byte[] hashedPassword) {
+    String filename = passStore + "/" + username + ".password";
 
-    return true; // placeholder
+    File hashOnDisk = new File(filename);
+
+    if (hashOnDisk.exists()) {
+      byte[] storedHash = readFromFile(filename);
+      return Arrays.equals(storedHash, hashedPassword);
+    } else {
+      // New user
+      System.out.println("Looks like you're new here. Welcome!  Don't forget your password :)");
+      saveToFile(hashedPassword, filename);
+      return true;
+    }
   }
 
   public byte[] signMessage(byte[] message)
@@ -275,41 +299,50 @@ public class CryptoChat {
 
   /**
    * @param password
-   * @return
+   * @return hash
    */
   public byte[] hashPassword(byte[] password) {
-    // TODO hash the password and return it
-    return "".getBytes(); // placeholder
+    try {
+      byte[] hash = MessageDigest.getInstance("SHA-256").digest(password);
+      if (DEBUG) System.out.println("DEBUG  Hash:" + hash);
+      return hash;
+    } catch (NoSuchAlgorithmException e) {
+      System.out.println("Unable to hash password");
+      System.out.println(e);
+      return "".getBytes(); // @todo: guarantee a sensible return value
+    }
   }
 
+  /**
+   * Hash the plaintext password
+   *
+   * @param username
+   * @param plaintext
+   */
   public void createPassword(String username, String plaintext) {
-    // Hash the plaintext password
     byte[] hashedPassword = hashPassword(plaintext.getBytes());
-
-    String filename = passStore + "/" + username + ".passowrd";
+    String filename = passStore + "/" + username + ".password";
 
     saveToFile(hashedPassword, filename);
   }
 
   /** */
   public void createSymmetricCiphers() {
-    // TODO: replace ??? with algorithm
+    // @todo: replace ??? with algorithm
     symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
     symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
   }
 
   /** @param otherUserPublicKey */
   public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
-    // TODO
-    // Convert otherUserPublicKey to Key (or PublicKey object)
-    // and replace ??? with algorithm
+    // @todo: Convert otherUserPublicKey to Key (or PublicKey object) and replace ??? with algorithm
     PublicKey key = null; // placeholder
     asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
   }
 
   /** */
   public void createAsymmetricDecryptionCipher() {
-    // TODO: replace ??? with algorithm
+    // @todo: replace ??? with algorithm
     asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
   }
 
@@ -320,9 +353,7 @@ public class CryptoChat {
    * @return
    */
   public Cipher createCipher(Key key, String algorithm, int cipherMode) {
-    // TODO: Create a cipher using the given key and algorithm and return it
-    // Reference:
-    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
+    // @todo: Create a cipher using the given key and algorithm and return it. Reference: https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
     return null; // placeholder
   }
 
@@ -383,7 +414,8 @@ public class CryptoChat {
       FileOutputStream fos = new FileOutputStream(filename);
       fos.write(contents);
       fos.close();
-    } catch (IOException e) { // TODO Auto-generated catch block
+    } catch (IOException e) {
+      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
       e.printStackTrace();
     }
   }
@@ -395,7 +427,10 @@ public class CryptoChat {
   public byte[] readFromFile(String filename) {
     try {
       return Files.readAllBytes(new File(filename).toPath());
-    } catch (IOException e) { // TODO Auto-generated catch block
+    } catch (NoSuchFileException e) {
+      return null;
+    } catch (IOException e) {
+      System.out.println("Line: " + e.getStackTrace()[0].getLineNumber());
       e.printStackTrace();
       return null;
     }
