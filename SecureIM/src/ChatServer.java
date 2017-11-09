@@ -10,7 +10,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 public class ChatServer implements ChatCallback {
   static final boolean DEBUG = false;
@@ -43,7 +46,7 @@ public class ChatServer implements ChatCallback {
 
       input = new Scanner(System.in);
       cryptoChat = new CryptoChat(input, KEYSTORE, PASS_STORE);
-
+      
       setupChat();
       setupSecureConnection();
 

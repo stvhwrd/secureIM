@@ -24,6 +24,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -135,7 +136,7 @@ public class CryptoChat {
       return;
     } else {
       try {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
 
@@ -198,7 +199,7 @@ public class CryptoChat {
 
     try {
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(keyData);
-      KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       publicKey = keyFactory.generatePublic(pubKeySpec);
 
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
@@ -227,7 +228,7 @@ public class CryptoChat {
 
     try {
       PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(keyData);
-      KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       privateKey = keyFactory.generatePrivate(privKeySpec);
     } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
       displayExceptionInfo(e);
@@ -301,7 +302,7 @@ public class CryptoChat {
    * @throws NoSuchAlgorithmException
    */
   public void createSigner() throws InvalidKeyException, NoSuchAlgorithmException {
-    signer = Signature.getInstance("SHA256withDSA");
+    signer = Signature.getInstance("SHA256withRSA");
 
     /* Initializing the object with a private key */
     PrivateKey priv = getPrivateKey();
@@ -318,10 +319,10 @@ public class CryptoChat {
       throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException {
     X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(publicKeyData);
 
-    KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
     PublicKey pubKey = keyFactory.generatePublic(pubKeySpec);
 
-    verifier = Signature.getInstance("SHA256withDSA");
+    verifier = Signature.getInstance("SHA256withRSA");
     verifier.initVerify(pubKey);
   }
 
@@ -355,36 +356,59 @@ public class CryptoChat {
     saveToFile(hashedPassword, filename);
   }
 
-  /** @todo: replace ??? with algorithm */
   public void createSymmetricCiphers() {
-    symmetricEncryptionCipher = createCipher(getSecretKey(), "???", Cipher.ENCRYPT_MODE);
-    symmetricDecryptionCipher = createCipher(getSecretKey(), "???", Cipher.DECRYPT_MODE);
+    symmetricEncryptionCipher = createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.ENCRYPT_MODE);
+    symmetricDecryptionCipher = createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.DECRYPT_MODE);
+
   }
 
   /**
-   * @todo: Convert otherUserPublicKey to Key (or PublicKey object) and replace ??? with algorithm
    * @param otherUserPublicKey
    */
   public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
-    PublicKey key = null; // placeholder
-    asymmetricEncryptionCipher = createCipher(key, "???", Cipher.ENCRYPT_MODE);
+    X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(otherUserPublicKey);
+
+    KeyFactory keyFactory;
+    PublicKey pubKey = null;
+    try {
+      keyFactory = KeyFactory.getInstance("RSA");
+      pubKey = keyFactory.generatePublic(pubKeySpec);
+    } catch (InvalidKeySpecException e) {
+      e.printStackTrace();
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    asymmetricEncryptionCipher = createCipher(pubKey, "RSA", Cipher.ENCRYPT_MODE);
   }
 
-  /** @todo: replace ??? with algorithm */
   public void createAsymmetricDecryptionCipher() {
-    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "???", Cipher.DECRYPT_MODE);
+    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "RSA", Cipher.DECRYPT_MODE);
   }
 
   /**
-   * @todo: Create a cipher using the given key and algorithm and return it. Reference:
-   *     https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
    * @param key
    * @param algorithm
    * @param cipherMode
    * @return
    */
   public Cipher createCipher(Key key, String algorithm, int cipherMode) {
-    return null; // placeholder
+    Cipher cipher = null;
+
+    // Create the cipher
+    try {
+      cipher = Cipher.getInstance(algorithm);
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+      e.printStackTrace();
+    }
+
+    // Initialize the cipher
+    try {
+      cipher.init(cipherMode, key);
+    } catch (InvalidKeyException e) {
+      e.printStackTrace();
+    }
+
+    return cipher;
   }
 
   /**

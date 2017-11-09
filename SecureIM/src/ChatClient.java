@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -228,14 +229,14 @@ public class ChatClient implements ChatCallback {
 
       case "getSecretKey":
         byte[] secretKeyData;
-        SecretKey secretKey = cryptoChat.getSecretKey();
-        if (secretKey == null) {
+        if ((new File(KEYSTORE + "/secret.key")).exists()) {
+          secretKeyData = cryptoChat.getSecretKey().getEncoded();
+        } else {
           // Create a symmetric key
           secretKeyData = cryptoChat.createSecretKey();
-          cryptoChat.createSymmetricCiphers();
-        } else {
-          secretKeyData = secretKey.getEncoded();
         }
+        cryptoChat.createSymmetricCiphers();
+        System.out.println(secretKeyData.toString());
         byte[] encryptedKey = cryptoChat.encryptPublic(secretKeyData);
         return encryptedKey;
 
