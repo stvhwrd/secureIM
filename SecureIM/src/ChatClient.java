@@ -167,6 +167,14 @@ public class ChatClient implements ChatCallback {
           BadPaddingException, SignatureException, NoSuchAlgorithmException {
     while (true) {
       String msg = input.nextLine().trim();
+      boolean exit = false;
+
+      if (msg.equals("/exit")) {
+        exit = true;
+        msg = "The client has disconnected.\nPress enter to continue";
+        System.out.println("Disconnected from server");
+        System.out.println("Goodbye! Come back soon");
+      }
       msg = "[" + client.getName() + "] " + msg;
 
       byte[] msgBytes = msg.getBytes();
@@ -180,6 +188,10 @@ public class ChatClient implements ChatCallback {
         server.sendMessage(msgBytes, sig);
       } else {
         server.sendMessage(msgBytes);
+      }
+      if (exit) {
+        server.disconnectClient();
+        System.exit(0);
       }
     }
   }
@@ -229,15 +241,19 @@ public class ChatClient implements ChatCallback {
 
       case "getSecretKey":
         byte[] secretKeyData;
-        if ((new File(KEYSTORE + "/secret.key")).exists()) {
-          secretKeyData = cryptoChat.getSecretKey().getEncoded();
+        SecretKey secretKey = cryptoChat.getSecretKey();
+
+        if (secretKey != null) {
+          secretKeyData = secretKey.getEncoded();
         } else {
           // Create a symmetric key
           secretKeyData = cryptoChat.createSecretKey();
         }
-        cryptoChat.createSymmetricCiphers();
-        System.out.println(secretKeyData.toString());
+        if (cryptoChat.symmetricEncryptionCipher == null) {
+          cryptoChat.createSymmetricCiphers();
+        }
         byte[] encryptedKey = cryptoChat.encryptPublic(secretKeyData);
+        System.out.println(encryptedKey.length);
         return encryptedKey;
 
       default:

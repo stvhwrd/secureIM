@@ -131,6 +131,7 @@ public class ChatServer implements ChatCallback {
 
       // Decrypt the key
       byte[] secretKeyData = cryptoChat.decryptPrivate(encryptedSecretKey);
+      System.out.println(secretKeyData.length);
       cryptoChat.setSecretKey(secretKeyData);
       cryptoChat.createSymmetricCiphers();
     }

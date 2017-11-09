@@ -45,6 +45,10 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
     connectLatch.countDown();
   }
 
+  public void disconnectClient() {
+    client = null;
+  }
+
   /**
    * (non-Javadoc)
    *

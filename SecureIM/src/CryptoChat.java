@@ -18,6 +18,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
@@ -167,6 +168,7 @@ public class CryptoChat {
     SecretKey aesKey = keygen.generateKey();
     byte[] aesKeyData = aesKey.getEncoded();
 
+    System.out.println("--Shh super secret key--");
     saveToFile(aesKeyData, keyStore + "/" + "secret.key");
 
     return aesKeyData;
@@ -243,6 +245,13 @@ public class CryptoChat {
    * @return SecretKey
    */
   public SecretKey getSecretKey() {
+    String filepath = keyStore + "/" + "secret.key";
+    File f = new File(filepath);
+
+    if (!f.exists()) {
+      return null;
+    }
+
     byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
 
     // Convert it to a SecretKey object:
@@ -357,14 +366,13 @@ public class CryptoChat {
   }
 
   public void createSymmetricCiphers() {
-    symmetricEncryptionCipher = createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.ENCRYPT_MODE);
-    symmetricDecryptionCipher = createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.DECRYPT_MODE);
-
+    symmetricEncryptionCipher =
+        createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.ENCRYPT_MODE);
+    symmetricDecryptionCipher =
+        createCipher(getSecretKey(), "AES/ECB/PKCS5Padding", Cipher.DECRYPT_MODE);
   }
 
-  /**
-   * @param otherUserPublicKey
-   */
+  /** @param otherUserPublicKey */
   public void createAsymmetricEncryptionCipher(byte[] otherUserPublicKey) {
     X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(otherUserPublicKey);
 
@@ -378,11 +386,11 @@ public class CryptoChat {
     } catch (NoSuchAlgorithmException e) {
       e.printStackTrace();
     }
-    asymmetricEncryptionCipher = createCipher(pubKey, "RSA", Cipher.ENCRYPT_MODE);
+    asymmetricEncryptionCipher = createCipher(pubKey, "RSA/ECB/PKCS1Padding", Cipher.ENCRYPT_MODE);
   }
 
   public void createAsymmetricDecryptionCipher() {
-    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "RSA", Cipher.DECRYPT_MODE);
+    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "RSA/ECB/PKCS1Padding", Cipher.DECRYPT_MODE);
   }
 
   /**
@@ -441,7 +449,7 @@ public class CryptoChat {
    */
   public byte[] encryptPublic(byte[] message)
       throws IllegalBlockSizeException, BadPaddingException {
-    return asymmetricEncryptionCipher.doFinal(message);
+	  return Base64.getEncoder().encode(asymmetricEncryptionCipher.doFinal(message));
   }
 
   /**
@@ -452,7 +460,8 @@ public class CryptoChat {
    */
   public byte[] decryptPrivate(byte[] encrypted)
       throws IllegalBlockSizeException, BadPaddingException {
-    return asymmetricDecryptionCipher.doFinal(encrypted);
+	  System.out.println(encrypted.length);
+	  return Base64.getDecoder().decode(asymmetricDecryptionCipher.doFinal(encrypted));
   }
 
   /**

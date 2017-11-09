@@ -63,6 +63,8 @@ public interface ChatInterface extends Remote {
    * @throws RemoteException
    */
   public ChatInterface getClient() throws RemoteException;
+  
+  public void disconnectClient() throws RemoteException;
 
   /**
    * @return
