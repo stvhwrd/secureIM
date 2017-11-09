@@ -7,7 +7,9 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -47,14 +49,15 @@ public class ChatServer implements ChatCallback {
       setupChat();
 
       while (true) {
+        CountDownLatch clientReady = server.waitForReady();
+
         setupSecureConnection();
 
+        // Let client know server is ready
+        client.removeReadyLatch();
+
         // Wait for client to finish setting up connection
-        if (client.isReady()) {
-          client.removeReadyLatch();
-        } else {
-          server.waitForReady().await();
-        }
+        clientReady.await();
 
         String msg = "\n[System] Secure connection established with " + client.getName() + ".";
         System.out.println(msg);
@@ -144,13 +147,34 @@ public class ChatServer implements ChatCallback {
     }
 
     if (securityOptions.authentication) {
+      if (cryptoChat.verifier == null) {
+        byte[] clientKeyData = client.sendRequest("getPublicKey");
+        cryptoChat.createVerifier(clientKeyData);
+      }
+
+      if (cryptoChat.asymmetricDecryptionCipher == null) {
+        cryptoChat.createAsymmetricDecryptionCipher();
+      }
+
       // Authenticate the client
       boolean passwordsMatch;
+      boolean verified;
       do {
-        byte[] clientPassword = client.sendRequest("getPassword");
+        byte[] data = client.sendRequest("getPassword");
+        int passwordLength = (int) data[data.length - 1] & 0xFF;
+        byte[] clientPassword = Arrays.copyOfRange(data, 0, passwordLength);
+        byte[] sig = Arrays.copyOfRange(data, passwordLength, data.length - 1);
+        verified = cryptoChat.verifyMessage(clientPassword, sig);
+        clientPassword = cryptoChat.decryptPrivate(clientPassword);
         passwordsMatch = cryptoChat.authenticateUser(client.getName(), clientPassword);
         if (!passwordsMatch) {
-          client.sendMessage("\nIncorrect password.");
+          client.sendPlainMessage("\nIncorrect password.");
+          if (!verified) {
+            System.out.println(
+                "Caution: "
+                    + client.getName()
+                    + " attempted to login but the message integrity could not be verified");
+          }
         }
       } while (!passwordsMatch);
 
@@ -250,7 +274,42 @@ public class ChatServer implements ChatCallback {
 
     switch (request) {
       case "getPassword":
-        return cryptoChat.hashPassword(cryptoChat.getPasswordFromUser());
+        byte[] password = cryptoChat.hashPassword(cryptoChat.getPasswordFromUser());
+
+        // Encrypt the hashed password
+        if (cryptoChat.asymmetricEncryptionCipher == null) {
+          try {
+            byte[] serverKeyData = client.sendRequest("getPublicKey");
+            cryptoChat.createAsymmetricEncryptionCipher(serverKeyData);
+          } catch (RemoteException | UnsupportedEncodingException | InterruptedException e) {
+            e.printStackTrace();
+          } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+          }
+        }
+        password = cryptoChat.encryptPublic(password);
+        byte[] sig = null;
+
+        // Sign the encrypted hashed password
+        try {
+          if (cryptoChat.signer == null) {
+            cryptoChat.createSigner();
+          }
+          sig = cryptoChat.signMessage(password);
+        } catch (SignatureException | UnsupportedEncodingException e1) {
+          e1.printStackTrace();
+        } catch (InvalidKeyException e) {
+          e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+          e.printStackTrace();
+        }
+
+        byte[] ret = new byte[password.length + sig.length + 1];
+        System.arraycopy(password, 0, ret, 0, password.length);
+        System.arraycopy(sig, 0, ret, password.length, sig.length);
+        ret[ret.length - 1] = (byte) password.length;
+
+        return ret;
 
       case "getPublicKey":
         return cryptoChat.getPublicKey().getEncoded();
