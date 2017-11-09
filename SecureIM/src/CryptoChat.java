@@ -168,7 +168,6 @@ public class CryptoChat {
     SecretKey aesKey = keygen.generateKey();
     byte[] aesKeyData = aesKey.getEncoded();
 
-    System.out.println("--Shh super secret key--");
     saveToFile(aesKeyData, keyStore + "/" + "secret.key");
 
     return aesKeyData;

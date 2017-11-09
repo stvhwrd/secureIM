@@ -13,7 +13,6 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.SecretKey;
 
 public class ChatClient implements ChatCallback {
   static final boolean DEBUG = false;
@@ -292,6 +291,7 @@ public class ChatClient implements ChatCallback {
         // Create a new symmetric key
         byte[] secretKeyData = cryptoChat.createSecretKey();
 
+        // Encrypt the key
         if (cryptoChat.asymmetricEncryptionCipher == null) {
           try {
             byte[] serverKeyData = server.sendRequest("getPublicKey");
@@ -302,7 +302,26 @@ public class ChatClient implements ChatCallback {
         }
 
         byte[] encryptedKey = cryptoChat.encryptPublic(secretKeyData);
-        return encryptedKey;
+        sig = null;
+
+        // Sign the encrypted key
+        try {
+          if (cryptoChat.signer == null) {
+            cryptoChat.createSigner();
+          }
+          sig = cryptoChat.signMessage(encryptedKey);
+        } catch (SignatureException | UnsupportedEncodingException e1) {
+          e1.printStackTrace();
+        } catch (InvalidKeyException e) {
+          e.printStackTrace();
+        }
+
+        ret = new byte[encryptedKey.length + sig.length + 1];
+        System.arraycopy(encryptedKey, 0, ret, 0, encryptedKey.length);
+        System.arraycopy(sig, 0, ret, encryptedKey.length, sig.length);
+        ret[ret.length - 1] = (byte) encryptedKey.length;
+
+        return ret;
 
       default:
         System.out.println("Uknown request: " + request);

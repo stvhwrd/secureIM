@@ -131,8 +131,19 @@ public class ChatServer implements ChatCallback {
     if (securityOptions.confidentiality) {
       cryptoChat.createAsymmetricDecryptionCipher();
 
+      byte[] clientKeyData = client.sendRequest("getPublicKey");
+      cryptoChat.createVerifier(clientKeyData);
+
       // Get symmetric key from client
-      byte[] encryptedSecretKey = client.sendRequest("getSecretKey");
+      byte[] data = client.sendRequest("getSecretKey");
+
+      // Check integrity
+      int encryptedKeyLength = (int) data[data.length - 1] & 0xFF;
+      byte[] encryptedSecretKey = Arrays.copyOfRange(data, 0, encryptedKeyLength);
+      byte[] sig = Arrays.copyOfRange(data, encryptedKeyLength, data.length - 1);
+      if (!cryptoChat.verifyMessage(encryptedSecretKey, sig)) {
+        System.out.println("[System]: The integrity of the shared key could not be verified.");
+      }
 
       // Decrypt the key
       byte[] secretKeyData = cryptoChat.decryptPrivate(encryptedSecretKey);
@@ -143,7 +154,9 @@ public class ChatServer implements ChatCallback {
     if (securityOptions.integrity) {
       byte[] clientKeyData = client.sendRequest("getPublicKey");
       cryptoChat.createSigner();
-      cryptoChat.createVerifier(clientKeyData);
+      if (cryptoChat.verifier == null) {
+        cryptoChat.createVerifier(clientKeyData);
+      }
     }
 
     if (securityOptions.authentication) {
