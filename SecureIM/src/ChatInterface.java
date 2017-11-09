@@ -30,6 +30,8 @@ public interface ChatInterface extends Remote {
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException;
 
+  public void sendPlainMessage(String s) throws RemoteException;
+  
   public void sendMessage(String message, byte[] signedMessage)
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException;

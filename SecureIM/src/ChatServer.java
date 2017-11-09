@@ -4,22 +4,13 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.security.*;
 
 public class ChatServer implements ChatCallback {
   static final boolean DEBUG = false;
@@ -215,18 +206,16 @@ public class ChatServer implements ChatCallback {
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, InterruptedException, NoSuchAlgorithmException, SignatureException {
     // Make sure the security options are the same
-    String clientSecurityOptions = new String(client.sendRequest("getSecurityOptions"), "UTF-8");
-    boolean optionsMatch = securityOptions.toString().equals(clientSecurityOptions);
-
-    while (!optionsMatch) {
-      // Let the client know options don't match
-      client.sendMessage("Options don't match");
-
-      // Request new security options from client
-      clientSecurityOptions = new String(client.sendRequest("getSecurityOptions"), "UTF-8");
-
+    boolean optionsMatch;
+    do {
+      String clientSecurityOptions = new String(client.sendRequest("getSecurityOptions"), "UTF-8");
       optionsMatch = securityOptions.toString().equals(clientSecurityOptions);
-    }
+
+      if (!optionsMatch) {
+        // Let the client know options don't match
+        client.sendPlainMessage("Options don't match server security options.");
+      }
+    } while (!optionsMatch);
   }
 
   /*

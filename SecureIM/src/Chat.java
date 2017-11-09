@@ -117,6 +117,10 @@ public class Chat extends UnicastRemoteObject implements ChatInterface {
       callback.onMessage(s, signedS);
     }
   }
+  
+  public void sendPlainMessage(String s) throws RemoteException {
+	  System.out.println(s);
+  }
 
   /**
    * (non-Javadoc)

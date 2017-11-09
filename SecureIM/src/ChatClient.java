@@ -1,25 +1,17 @@
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Scanner;
 
 import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 public class ChatClient implements ChatCallback {
   static final boolean DEBUG = false;
@@ -125,16 +117,15 @@ public class ChatClient implements ChatCallback {
       throws RemoteException, NoSuchAlgorithmException, InterruptedException,
           IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException,
           SignatureException, InvalidKeyException, InvalidKeySpecException {
-    byte[] serverKeyData = null;
 
     if (securityOptions.confidentiality) {
-        cryptoChat.createSymmetricCiphers();
+      cryptoChat.createSymmetricCiphers();
     }
 
     if (securityOptions.integrity) {
-    	// Get server's public key
-        serverKeyData = server.sendRequest("getPublicKey");
-        
+      // Get server's public key
+      byte[] serverKeyData = server.sendRequest("getPublicKey");
+
       cryptoChat.createSigner();
       cryptoChat.createVerifier(serverKeyData);
     }
@@ -227,13 +218,9 @@ public class ChatClient implements ChatCallback {
     if (DEBUG) System.out.println("DEBUG  Request: " + request);
 
     switch (request) {
-      case "getNewSecurityOptions":
-    	  securityOptions = cryptoChat.getSecurityOptionsFromUser();
-        return securityOptions.toString().getBytes();
-
       case "getSecurityOptions":
-    	  securityOptions = cryptoChat.getSecurityOptions();
-          return securityOptions.toString().getBytes();
+        securityOptions = cryptoChat.getSecurityOptionsFromUser();
+        return securityOptions.toString().getBytes();
 
       case "getPassword":
         return cryptoChat.hashPassword(cryptoChat.getPasswordFromUser());
@@ -246,12 +233,12 @@ public class ChatClient implements ChatCallback {
         SecretKey secretKey = cryptoChat.getSecretKey();
 
         if (secretKey == null) {
-        	// Create a symmetric key
+          // Create a symmetric key
           secretKeyData = cryptoChat.createSecretKey();
         } else {
           secretKeyData = secretKey.getEncoded();
         }
-        
+
         if (cryptoChat.asymmetricEncryptionCipher == null) {
           try {
             byte[] serverKeyData = server.sendRequest("getPublicKey");
@@ -260,7 +247,7 @@ public class ChatClient implements ChatCallback {
             e.printStackTrace();
           }
         }
-        
+
         byte[] encryptedKey = cryptoChat.encryptPublic(secretKeyData);
         return encryptedKey;
 
