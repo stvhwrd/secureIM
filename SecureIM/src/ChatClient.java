@@ -137,7 +137,7 @@ public class ChatClient implements ChatCallback {
     }
 
     if (securityOptions.authentication) {
-    	System.out.println("\n[System] Autenticating server... One moment.");
+      System.out.println("\n[System] Autenticating server... One moment.");
       if (cryptoChat.verifier == null) {
         byte[] serverKeyData = server.sendRequest("getPublicKey");
         cryptoChat.createVerifier(serverKeyData);
@@ -289,15 +289,8 @@ public class ChatClient implements ChatCallback {
         return cryptoChat.getPublicKey().getEncoded();
 
       case "getSecretKey":
-        byte[] secretKeyData;
-        SecretKey secretKey = cryptoChat.getSecretKey();
-
-        if (secretKey == null) {
-          // Create a symmetric key
-          secretKeyData = cryptoChat.createSecretKey();
-        } else {
-          secretKeyData = secretKey.getEncoded();
-        }
+        // Create a new symmetric key
+        byte[] secretKeyData = cryptoChat.createSecretKey();
 
         if (cryptoChat.asymmetricEncryptionCipher == null) {
           try {
