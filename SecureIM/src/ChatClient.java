@@ -55,7 +55,10 @@ public class ChatClient implements ChatCallback {
 
       setupSecureConnection();
 
-      String msg = "\n[System] Secure connection established with " + server.getName() + ".";
+      String msg =
+          "\n[System] Secure connection established with "
+              + server.getName()
+              + ".\nType '/exit' when you wish to end the chat session.\n";
       System.out.println(msg);
 
       startChat();
@@ -180,6 +183,7 @@ public class ChatClient implements ChatCallback {
       } else {
         server.sendMessage(msgBytes);
       }
+
       if (exit) {
         server.disconnectClient();
         System.exit(0);

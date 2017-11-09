@@ -45,19 +45,24 @@ public class ChatServer implements ChatCallback {
       cryptoChat = new CryptoChat(input, KEYSTORE, PASS_STORE);
 
       setupChat();
-      setupSecureConnection();
 
-      // Wait for client to finish setting up connection
-      if (client.isReady()) {
-        client.removeReadyLatch();
-      } else {
-        server.waitForReady().await();
+      while (true) {
+        setupSecureConnection();
+
+        // Wait for client to finish setting up connection
+        if (client.isReady()) {
+          client.removeReadyLatch();
+        } else {
+          server.waitForReady().await();
+        }
+
+        String msg = "\n[System] Secure connection established with " + client.getName() + ".";
+        System.out.println(msg);
+
+        startChat();
+
+        System.out.println("[System] Waiting for new client to connect.");
       }
-
-      String msg = "\n[System] Secure connection established with " + client.getName() + ".";
-      System.out.println(msg);
-
-      startChat();
 
     } catch (Exception e) {
       System.out.println("\n[System] Server failed: " + e);
@@ -164,9 +169,11 @@ public class ChatServer implements ChatCallback {
   public void startChat()
       throws RemoteException, UnsupportedEncodingException, IllegalBlockSizeException,
           BadPaddingException, SignatureException, NoSuchAlgorithmException {
-    while (true) {
+    boolean clientConnected = true;
+    while (clientConnected) {
       String msg = input.nextLine().trim();
-      if (server.getClient() != null) {
+      clientConnected = server.getClient() != null;
+      if (clientConnected) {
         msg = "[" + server.getName() + "] " + msg;
 
         byte[] msgBytes = msg.getBytes();
@@ -181,16 +188,8 @@ public class ChatServer implements ChatCallback {
         } else {
           client.sendMessage(msgBytes);
         }
-      } else {
-        // Client disconnected
-        System.out.println("\n[System] " + client.getName() + " has disconnected.");
-        client = null;
-        break;
       }
     }
-
-    // Wait for new client to connect
-    startServer();
   }
 
   /**
