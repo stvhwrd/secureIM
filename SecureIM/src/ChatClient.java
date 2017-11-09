@@ -169,7 +169,7 @@ public class ChatClient implements ChatCallback {
         }
       } while (!passwordsMatch);
 
-      System.out.println("\nClient has authenticated as \"" + client.getName() + "\"");
+      System.out.println("\nServer has authenticated as \"" + server.getName() + "\"");
     }
   }
 
