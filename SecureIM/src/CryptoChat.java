@@ -126,7 +126,7 @@ public class CryptoChat {
   }
 
   /** */
-  public void createKeyPair() {
+  public KeyPair createKeyPair() {
     String publicKeyFilepath = keyStore + "/public.key";
     String privateKeyFilepath = keyStore + "/private.key";
 
@@ -134,7 +134,7 @@ public class CryptoChat {
     File publicKeyFile = new File(publicKeyFilepath);
     File privateKeyFile = new File(privateKeyFilepath);
     if (publicKeyFile.exists() && privateKeyFile.exists()) {
-      return;
+      return null;
     } else {
       try {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
@@ -150,11 +150,13 @@ public class CryptoChat {
         } else {
           saveToFile(publicKey, publicKeyFilepath);
           saveToFile(privateKey, privateKeyFilepath);
+          return kp;
         }
       } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
         displayExceptionInfo(e);
       }
     }
+    return null;
   }
 
   /**
@@ -163,7 +165,6 @@ public class CryptoChat {
    */
   public byte[] createSecretKey() throws NoSuchAlgorithmException {
     // Create a secret (symmetric) key:
-    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SimpleEncrEx
     KeyGenerator keygen = KeyGenerator.getInstance("AES");
     SecretKey aesKey = keygen.generateKey();
     byte[] aesKeyData = aesKey.getEncoded();
@@ -191,12 +192,14 @@ public class CryptoChat {
   public PublicKey getPublicKey() {
     String filepath = keyStore + "/" + "public.key";
     File f = new File(filepath);
+    byte[] keyData;
 
     if (!f.exists()) {
-      createKeyPair();
+      keyData = createKeyPair().getPublic().getEncoded();
+    } else {
+      keyData = readFromFile(filepath);
     }
 
-    byte[] keyData = readFromFile(filepath);
     PublicKey publicKey = null;
 
     try {
@@ -219,12 +222,13 @@ public class CryptoChat {
   public PrivateKey getPrivateKey() {
     String filepath = keyStore + "/" + "private.key";
     File f = new File(filepath);
+    byte[] keyData;
 
     if (!f.exists()) {
-      createKeyPair();
+      keyData = createKeyPair().getPrivate().getEncoded();
+    } else {
+      keyData = readFromFile(filepath);
     }
-
-    byte[] keyData = readFromFile(filepath);
 
     PrivateKey privateKey = null;
 
@@ -255,8 +259,7 @@ public class CryptoChat {
     byte[] aesKeyData = readFromFile(keyStore + "/" + "secret.key");
 
     // Convert it to a SecretKey object:
-    // https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html#SecretKeyFactory
-    SecretKeySpec secretKey = new SecretKeySpec(aesKeyData, "AES");
+    SecretKey secretKey = new SecretKeySpec(aesKeyData, "AES");
     return secretKey;
   }
 
@@ -390,7 +393,8 @@ public class CryptoChat {
   }
 
   public void createAsymmetricDecryptionCipher() {
-    asymmetricDecryptionCipher = createCipher(getPrivateKey(), "RSA/ECB/PKCS1Padding", Cipher.DECRYPT_MODE);
+    asymmetricDecryptionCipher =
+        createCipher(getPrivateKey(), "RSA/ECB/PKCS1Padding", Cipher.DECRYPT_MODE);
   }
 
   /**
@@ -449,7 +453,7 @@ public class CryptoChat {
    */
   public byte[] encryptPublic(byte[] message)
       throws IllegalBlockSizeException, BadPaddingException {
-	  return Base64.getEncoder().encode(asymmetricEncryptionCipher.doFinal(message));
+    return asymmetricEncryptionCipher.doFinal(message);
   }
 
   /**
@@ -460,8 +464,7 @@ public class CryptoChat {
    */
   public byte[] decryptPrivate(byte[] encrypted)
       throws IllegalBlockSizeException, BadPaddingException {
-	  System.out.println(encrypted.length);
-	  return Base64.getDecoder().decode(asymmetricDecryptionCipher.doFinal(encrypted));
+    return asymmetricDecryptionCipher.doFinal(encrypted);
   }
 
   /**
