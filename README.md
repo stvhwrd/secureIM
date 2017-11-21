@@ -1,5 +1,15 @@
-# secureIM
-### [Java] Secure instant messaging between a client and server program.
+<strong>
+<pre>
+Welcome to                    ___ __  __
+ ___  ___  ___ _   _ _ __ ___|_ _|  \/  |
+/ __|/ _ \/ __| | | | '__/ _ \| || |\/| |
+\__ \  __/ (__| |_| | | |  __/| || |  | |
+|___/\___|\___|\__,_|_|  \___|___|_|  |_|
+
+</pre>
+</strong>
+
+### [Java] Secure instant messaging between client and server.
 
 This application was developed in Eclipse-Java 4.7.1 (Oxygen) and leverages the [Java Cryptography Architecture](https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html).  Code formatting and style is as per [google-java-format](https://github.com/google/google-java-format).
 
@@ -64,6 +74,7 @@ In a second terminal window, navigate to the project folder and launch the clien
 java -Djava.security.policy=file:%cd%/src/security.policy -Djava.rmi.server.codebase=file:%cd%/bin/ -classpath %cd%/bin ChatClient;
 ```
 
+
 ## 4. Usage
 
 This section outlines the steps to use the application.
@@ -89,7 +100,8 @@ This section outlines the steps to use the application.
 
 
 8. If a client user disconnects from the chat, the server user will be notified and asked to press the enter key to allow a new client user to connect.
-
+
+ 
 ## 5. Assumptions
 
 This section outlines the assumptions made in the creation of this application.
@@ -111,4 +123,5 @@ The client folder is only accessible by the client and the server folder is only
 
 
 
-## 6. Contributors
+## Credit
+All contributors are [listed on GitHub](https://github.com/stvhwrd/secureIM/graphs/contributors)
